@@ -21,6 +21,11 @@
 					"name": "user-ssh-keys",
 					"type": "DIR",
 					"path": "/home/$USERNAME/.ssh/"
+				},
+				{
+					"name": "root-ssh-keys",
+					"type": "DIR",
+					"path": "/root/.ssh/"
 				}
 			],
 			"preRestore": [
@@ -33,15 +38,15 @@
 					"command": "iptables-restore < $BACKUP_PATH/network/iptables.txt; netfilter-persistent save"
 				},
 				{
-					"name": "Make sure user exists",
-					"command": "sudo adduser $USERNAME; sudo usermod -aG sudo $USERNAME; mkdir -p /home/$USERNAME/.ssh"
+					"name": "Make sure user and folders exists",
+					"command": "useradd -m -s /bin/bash $USERNAME; usermod -aG sudo $USERNAME; mkdir -p /home/$USERNAME/.ssh; mkdir -p /root/.ssh"
 				}
 			],
 			"postRestore": []
 		},
 		{
 			"name": "nginx",
-			"aptPackages": ["nginx", "libnginx-mod-stream"],
+			"aptPackages": ["nginx"],
 			"backup": [
 				{
 					"name": "nginx-configs",
@@ -49,7 +54,12 @@
 					"path": "/etc/nginx/"
 				}
 			],
-			"preRestore": [],
+			"preRestore": [
+				{
+					"name": "Stop nginx",
+					"command":"systemctl stop nginx.service"
+				}
+			],
 			"postRestore": [
 				{
 					"name": "Remove default site",
@@ -233,7 +243,7 @@
 			"preRestore": [
 				{
 					"name": "add cockpit user",
-					"command": "sudo adduser $COCKPIT_USERNAME; sudo usermod -aG sudo $COCKPIT_USERNAME; mkdir -p /home/$COCKPIT_USERNAME/.ssh; mkdir -p /etc/systemd/system/cockpit.socket.d"
+					"command": "useradd -m -p $(openssl passwd -6 $COCKPIT_USER_PASSWORD) -s /bin/bash $COCKPIT_USERNAME; sudo usermod -aG sudo $COCKPIT_USERNAME; mkdir -p /home/$COCKPIT_USERNAME/.ssh; mkdir -p /etc/systemd/system/cockpit.socket.d"
 				}
 			],
 			"postRestore": [
