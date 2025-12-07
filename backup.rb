@@ -49,6 +49,7 @@ apt install -y <%=@aptPackages.join(' ')%>
 def gsubVars(string)
 	return string.gsub("$BACKUP_PATH", BACKUP_PATH)
 		.gsub("$COCKPIT_USERNAME", COCKPIT_USERNAME)
+		.gsub("$COCKPIT_PASSWORD", COCKPIT_PASSWORD)
 		.gsub("$START_TIME", START_TIME)
 		.gsub("$ROOT_PATH", ROOT_PATH)
 		.gsub("$USERNAME", USERNAME)
@@ -57,15 +58,19 @@ end
 def gsubVarsRestore(string)
 	return string.gsub("$BACKUP_PATH", '.')
 		.gsub("$COCKPIT_USERNAME", COCKPIT_USERNAME)
+		.gsub("$COCKPIT_PASSWORD", COCKPIT_PASSWORD)
 		.gsub("$START_TIME", START_TIME)
 		.gsub("$ROOT_PATH", ROOT_PATH)
 		.gsub("$USERNAME", USERNAME)
 		.gsub("$TITLE", TITLE)
+		
 end
 def doBackupCommandsAndPrepareRestoreCommands(confHash = {})
 	puts SECTIONS_SEPARATOR
 	puts "#{H1_PREFIX} Backing up files"
 	puts "#{H1_PREFIX} (NOOP MODE IS ON, NO FILES COPYING)" if NOOP
+	puts "#{H1_PREFIX} ENTER A PASSWORD FOR COCKPIT_USER:"
+	COCKPIT_PASSWORD = gets.chomp
 	puts SECTIONS_SEPARATOR
 	@preCommands = []
 	@restoreCommands = []
