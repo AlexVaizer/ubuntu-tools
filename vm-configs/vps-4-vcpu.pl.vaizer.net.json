@@ -3,29 +3,6 @@
 	"username":"ubuntu",
 	"cockpitUsername": "vzr",
 	"softwares": [
-		// Software: {
-		// 		name: String,
-    //    aptPackages: [String, String...]
-		// 		backup: [
-		// 			{
-		// 				name: String,
-		// 				type: "DIR" or "FILE" or "COMMAND"
-		// 				path: String 
-		// 			}
-		// 		],
-		// 		preRestore: [
-		// 			{
-		// 				name: String,
-		// 				command: String 
-		// 			}
-		// 		],
-		// 		postRestore: [
-		// 			{
-		// 				name: String,
-		// 				command: String 
-		// 			}
-		// 		]
-		// }
 		{
 			"name": "network",
 			"aptPackages": ["iptables-persistent", "netfilter-persistent"],
