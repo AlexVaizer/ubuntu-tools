@@ -1,0 +1,308 @@
+{
+	"title": "vps-4-vcpu.pl.vaizer.net",
+	"username":"ubuntu",
+	"cockpitUsername": "vzr",
+	"softwares": [
+		// Software: {
+		// 		name: String,
+    //    packages: [String, String...]
+		// 		backup: [
+		// 			{
+		// 				name: String,
+		// 				type: "DIR" or "FILE" or "COMMAND"
+		// 				path: String 
+		// 			}
+		// 		],
+		// 		preRestore: [
+		// 			{
+		// 				name: String,
+		// 				command: String 
+		// 			}
+		// 		],
+		// 		postRestore: [
+		// 			{
+		// 				name: String,
+		// 				command: String 
+		// 			}
+		// 		]
+		// }
+		{
+			"name": "network",
+			"packages": ["iptables-persistent", "netfilter-persistent"],
+			"backup": [
+				{
+					"name": "iptables-rules",
+					"type": "COMMAND",
+					"path": "iptables-save > $BACKUP_PATH/network/iptables.txt"
+				},
+				{
+					"name": "vip-interface-settings",
+					"type": "COMMAND",
+					"path": "mkdir -p $BACKUP_PATH/network/vip-interface-settings; cp -v /etc/systemd/network/vip.* $BACKUP_PATH/network/vip-interface-settings"
+				},
+				{
+					"name": "user-ssh-keys",
+					"type": "DIR",
+					"path": "/home/$USERNAME/.ssh/"
+				}
+			],
+			"preRestore": [
+				{
+					"name": "Restore VIP interface",
+					"command": "cp -v $BACKUP_PATH/network/vip-interface-settings/vip.* /etc/systemd/network/; systemctl restart systemd-networkd"
+				},
+				{
+					"name": "Restore iptables rules",
+					"command": "iptables-restore < $BACKUP_PATH/network/iptables.txt; netfilter-persistent save"
+				},
+				{
+					"name": "Make sure user exists",
+					"command": "sudo adduser $USERNAME; sudo usermod -aG sudo $USERNAME; mkdir -p /home/$USERNAME/.ssh"
+				}
+			],
+			"postRestore": []
+		},
+		{
+			"name": "nginx",
+			"packages": ["nginx", "libnginx-mod-stream"],
+			"backup": [
+				{
+					"name": "nginx-configs",
+					"type": "DIR",
+					"path": "/etc/nginx/"
+				}
+			],
+			"preRestore": [],
+			"postRestore": [
+				{
+					"name": "Remove default site",
+					"command":"rm -f /etc/nginx/sites-enabled/default"
+				},
+				{
+					"name": "Enable nginx",
+					"command":"systemctl enable --now nginx.service; systemctl restart nginx.service"
+				}
+			]
+		},
+		{
+			"name": "v2ray",
+			"packages": ["v2ray"],
+			"backup": [
+				{
+					"name": "v2ray-configs",
+					"type": "DIR",
+					"path": "/etc/v2ray/"
+				},
+				{
+					"name": "v2ray-service-file",
+					"type": "FILE",
+					"path": "/lib/systemd/system/v2ray.service"
+				}
+			],
+			"preRestore": [
+				
+				{
+				    "name":"Add v2ray static User",
+				    "command": "systemctl stop v2ray; addgroup v2ray; adduser --system --no-create-home --ingroup v2ray v2ray"
+				},
+				{
+				    "name":"Create directories for logs and set owner",
+				    "command": "mkdir /var/log/v2ray; chown -R v2ray:v2ray /var/log/v2ray"
+				}
+				
+			],
+			"postRestore": [
+				{
+					"name":"Restart and enable v2ray",
+					"command": "systemctl enable --now v2ray.service; systemctl restart v2ray.service"
+				}
+			]
+		},
+		{
+			"name": "fail2ban",
+			"packages": ["fail2ban"],
+			"backup": [
+				{
+					"name": "fail2ban-configs",
+					"type": "DIR",
+					"path": "/etc/fail2ban/"
+				}
+			],
+			"preRestore": [],
+			"postRestore": [
+				{
+					"name":"Enable and start fail2ban",
+					"command": "systemctl enable --now fail2ban.service; systemctl restart fail2ban.service"
+				}
+			]
+
+		},
+		{
+			"name": "letsencrypt",
+			"packages": [],
+			"backup": [
+				{
+					"name": "aws-creds",
+					"path": "/root/.aws/config",
+					"type": "FILE"
+				},
+        {
+					"name": "cf-creds",
+					"path": "/root/cf-creds.txt",
+					"type": "FILE"
+				},
+				{
+					"name": "letsencrypt-configs",
+					"path": "/etc/letsencrypt/",
+					"type": "DIR"
+				}
+			],
+			"preRestore": [
+				{
+					"name":"Install certbot, dns-route-53, dns-cloudflare",
+					"command": "snap install core; snap refresh core; snap install --classic certbot; snap set certbot trust-plugin-with-root=ok; snap install certbot-dns-route53; snap set certbot trust-plugin-with-root=ok; snap install certbot-dns-cloudflare;"
+				},
+        {
+          "name": "Create directories for configs",
+          "command": "mkdir -p /root/.aws/; mkdir /etc/letsencrypt"
+        }
+			],
+			"postRestore": []
+		},
+		{
+			"name": "mongodb",
+			"packages":[],
+			"backup": [
+				{
+					"name": "mongo-config",
+					"type": "FILE",
+					"path": "/etc/mongod.conf"
+				},
+				{
+					"name": "mongo-data",
+					"type": "COMMAND",
+					"path": "STRING=$(cat /etc/systemd/system/wallet.service | grep MONGO_STRING | cut -d'=' -f3- | cut -d\"'\" -f1); mongodump --uri=$STRING --out=\"$BACKUP_PATH/mongodb/mongo-data\""
+				}
+			],
+			"preRestore": [
+				{
+					"name": "Install mongoDb",
+					"command": "curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc | gpg -o /usr/share/keyrings/mongodb-server-8.0.gpg --dearmor; echo 'deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse' | tee /etc/apt/sources.list.d/mongodb-org-8.0.list ; apt update -y; apt install -y mongodb-org"
+				},
+				{
+					"name": "Start mongod service temporarily with default config to upload backup",
+					"command": "systemctl start mongod.service"
+				}
+			],
+			"postRestore": [
+				{
+					"name": "Restore mongoDb Data",
+					"command": "mongorestore $BACKUP_PATH/mongodb/mongo-data --uri=mongodb://127.0.0.1:27017"
+				},
+				{
+					"name": "Enable and restart mongoDb",
+					"command": "systemctl enable --now mongod.service; systemctl restart mongod.service"
+				}
+			]
+		},
+		{
+			"name": "wallet",
+			"packages": ["curl","ruby-full", "ruby-full", "ruby-bundler", "ruby-dev", "net-tools", "build-essential", "zlib1g-dev", "libreadline-dev", "libssl-dev", "libcurl4-openssl-dev"],
+			"backup": [
+				{
+					"name": "wallet-var",
+					"type": "DIR",
+					"path": "/var/wallet/"
+				},
+				{
+					"name": "wallet-service",
+					"type": "FILE",
+					"path": "/etc/systemd/system/wallet.service"
+				}
+			],
+			"preRestore": [
+				{
+					"name": "Create directory for wallet",
+					"command": "mkdir /var/wallet/"
+				}
+			],
+			"postRestore": [
+				{
+					"name": "Install Ruby Gems",
+					"command":"cd /var/wallet; /usr/bin/bundle install; cd $( dirname \"${BASH_SOURCE[0]}\" )"
+				},
+				{
+					"name": "Start and enable wallet service",
+					"command": "systemctl daemon-reload; systemctl enable --now wallet.service; systemctl restart wallet.service"
+				}
+			]
+		},
+		{
+			"name": "cockpit",
+			"packages": ["cockpit"],
+			"backup": [
+				{
+					"name": "cockpit-user-ssh",
+					"type": "DIR",
+					"path": "/home/$COCKPIT_USERNAME/.ssh"
+				},
+				{
+					"name": "cockpit-override-conf",
+					"type": "FILE",
+					"path": "/etc/systemd/system/cockpit.socket.d/override.conf"
+				}
+			],
+			"preRestore": [
+				{
+					"name": "add cockpit user",
+					"command": "sudo adduser $COCKPIT_USERNAME; sudo usermod -aG sudo $COCKPIT_USERNAME; mkdir -p /home/$COCKPIT_USERNAME/.ssh; mkdir -p /etc/systemd/system/cockpit.socket.d"
+				}
+			],
+			"postRestore": [
+				{
+					"name":"Restart cockpit",
+					"command": "systemctl enable --now cockpit.socket; systemctl restart cockpit.socket"
+				}
+			]
+		},
+		{
+			"name": "openvpn",
+			"packages": [],
+			"backup": [
+				{
+					"name": "openvpn-config",
+					"path": "openvpn3 config-dump --config CloudConnexa > $BACKUP_PATH/openvpn/CloudConnexa.ovpn",
+					"type": "COMMAND"
+				}
+			],
+			"preRestore": [
+				{
+					"name":"Install the OpenVPN repository key used by the OpenVPN packages",
+					"command": "mkdir -p /etc/apt/keyrings;curl -fsSL https://packages.openvpn.net/packages-repo.gpg | tee /etc/apt/keyrings/openvpn.asc"
+				},
+				{
+					"name":"Add the OpenVPN repository",
+					"command": "echo \"deb [signed-by=/etc/apt/keyrings/openvpn.asc] https://packages.openvpn.net/openvpn3/debian $(lsb_release -c -s) main\" | tee /etc/apt/sources.list.d/openvpn-packages.list; apt update"
+				},
+				{
+					"name":"Enable IP Forwarding",
+					"command": "sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g' /etc/sysctl.conf; sed -i 's/#net.ipv6.conf.all.forwarding=1/net.ipv6.conf.all.forwarding=1/g' /etc/sysctl.conf; sysctl -p"
+				},
+				{
+					"name":"Install OpenVPN client",
+					"command": "apt install -y python3-openvpn-connector-setup"
+				},
+				{
+					"name": "Restore openvpn config",
+					"command": "openvpn3 config-import --persistent --name CloudConnexa --config $BACKUP_PATH/openvpn/CloudConnexa.ovpn"
+				}
+			],
+			"postRestore": [
+				{
+					"name": "Start service",
+					"command": "systemctl enable --now openvpn3-session@CloudConnexa.service"
+				}
+			]
+		}
+	]
+}
