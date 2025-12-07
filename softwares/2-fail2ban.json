@@ -1,0 +1,19 @@
+		{
+			"name": "fail2ban",
+			"packages": ["fail2ban"],
+			"backup": [
+				{
+					"name": "fail2ban-configs",
+					"type": "DIR",
+					"path": "/etc/fail2ban/"
+				}
+			],
+			"preRestore": [],
+			"postRestore": [
+				{
+					"name":"Enable and start fail2ban",
+					"command": "systemctl enable --now fail2ban.service; systemctl restart fail2ban.service"
+				}
+			]
+
+		}

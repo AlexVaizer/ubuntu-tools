@@ -1,0 +1,28 @@
+		{
+			"name": "cockpit",
+			"packages": ["cockpit"],
+			"backup": [
+				{
+					"name": "cockpit-user-ssh",
+					"type": "DIR",
+					"path": "/home/$COCKPIT_USERNAME/.ssh"
+				},
+				{
+					"name": "cockpit-override-conf",
+					"type": "FILE",
+					"path": "/etc/systemd/system/cockpit.socket.d/override.conf"
+				}
+			],
+			"preRestore": [
+				{
+					"name": "add cockpit user",
+					"command": "sudo adduser $COCKPIT_USERNAME; sudo usermod -aG sudo $COCKPIT_USERNAME; mkdir -p /home/$COCKPIT_USERNAME/.ssh; mkdir -p /etc/systemd/system/cockpit.socket.d"
+				}
+			],
+			"postRestore": [
+				{
+					"name":"Restart cockpit",
+					"command": "systemctl enable --now cockpit.socket; systemctl restart cockpit.socket"
+				}
+			]
+		}

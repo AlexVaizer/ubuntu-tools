@@ -1,0 +1,34 @@
+		{
+			"name": "v2ray",
+			"packages": ["v2ray"],
+			"backup": [
+				{
+					"name": "v2ray-configs",
+					"type": "DIR",
+					"path": "/etc/v2ray/"
+				},
+				{
+					"name": "v2ray-service-file",
+					"type": "FILE",
+					"path": "/lib/systemd/system/v2ray.service"
+				}
+			],
+			"preRestore": [
+				
+				{
+				    "name":"Add v2ray static User",
+				    "command": "systemctl stop v2ray; addgroup v2ray; adduser --system --no-create-home --ingroup v2ray v2ray"
+				}
+				,
+				{
+				    "name":"Create directories for logs and set owner",
+				    "command": "mkdir /var/log/v2ray; chown -R v2ray:v2ray /var/log/v2ray"
+				}
+			],
+			"postRestore": [
+				{
+					"name":"Restart and enable v2ray",
+					"command": "systemctl enable --now v2ray.service; systemctl restart v2ray.service"
+				}
+			]
+		}

@@ -1,0 +1,68 @@
+		{
+			"name": "mongodb",
+			"packages":[],
+			"backup": [
+				{
+					"name": "mongo-config",
+					"type": "FILE",
+					"path": "/etc/mongod.conf"
+				},
+				{
+					"name": "mongo-data",
+					"type": "COMMAND",
+					"path": "STRING=$(cat /etc/systemd/system/wallet.service | grep MONGO_STRING | cut -d'=' -f3- | cut -d\"'\" -f1); mongodump --uri=$STRING --out=\"$BACKUP_PATH/mongodb/mongo-data\""
+				}
+			],
+			"preRestore": [
+				{
+					"name": "Install mongoDb",
+					"command": "curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc | gpg -o /usr/share/keyrings/mongodb-server-8.0.gpg --dearmor; echo 'deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse' | tee /etc/apt/sources.list.d/mongodb-org-8.0.list ; apt update -y; apt install -y mongodb-org"
+				},
+				{
+					"name": "Start mongod service temporarily with default config to upload backup",
+					"command": "systemctl start mongod.service"
+				}
+			],
+			"postRestore": [
+				{
+					"name": "Restore mongoDb Data",
+					"command": "mongorestore $BACKUP_PATH/mongodb/mongo-data --uri=mongodb://127.0.0.1:27017"
+				},
+				{
+					"name": "Enable and restart mongoDb",
+					"command": "systemctl enable --now mongod.service; systemctl restart mongod.service"
+				}
+			]
+		},
+		{
+			"name": "wallet",
+			"packages": ["curl","ruby-full", "ruby-full", "ruby-bundler", "ruby-dev", "net-tools", "build-essential", "zlib1g-dev", "libreadline-dev", "libssl-dev", "libcurl4-openssl-dev"],
+			"backup": [
+				{
+					"name": "wallet-var",
+					"type": "DIR",
+					"path": "/var/wallet/"
+				},
+				{
+					"name": "wallet-service",
+					"type": "FILE",
+					"path": "/etc/systemd/system/wallet.service"
+				}
+			],
+			"preRestore": [
+				{
+					"name": "Create directory for wallet",
+					"command": "mkdir /var/wallet/"
+				}
+			],
+			"postRestore": [
+				{
+					"name": "Install Ruby Gems",
+					"command":"cd /var/wallet; /usr/bin/bundle install; cd $( dirname \"${BASH_SOURCE[0]}\" )"
+				},
+				{
+					"name": "Start and enable wallet service",
+					"command": "systemctl daemon-reload; systemctl enable --now wallet.service; systemctl restart wallet.service"
+				}
+			]
+		}

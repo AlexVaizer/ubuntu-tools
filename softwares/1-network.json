@@ -1,0 +1,36 @@
+		{
+			"name": "network",
+			"packages": ["iptables-persistent", "netfilter-persistent"],
+			"backup": [
+				{
+					"name": "iptables-rules",
+					"type": "COMMAND",
+					"path": "iptables-save > $BACKUP_PATH/network/iptables.txt"
+				},
+				{
+					"name": "vip-interface-settings",
+					"type": "COMMAND",
+					"path": "mkdir -p $BACKUP_PATH/network/vip-interface-settings; cp -v /etc/systemd/network/vip.* $BACKUP_PATH/network/vip-interface-settings"
+				},
+				{
+					"name": "user-ssh-keys",
+					"type": "DIR",
+					"path": "/home/$USERNAME/.ssh/"
+				}
+			],
+			"preRestore": [
+				{
+					"name": "Restore VIP interface",
+					"command": "cp -v $BACKUP_PATH/network/vip-interface-settings/vip.* /etc/systemd/network/; systemctl restart systemd-networkd"
+				},
+				{
+					"name": "Restore iptables rules",
+					"command": "iptables-restore < $BACKUP_PATH/network/iptables.txt; netfilter-persistent save"
+				},
+				{
+					"name": "Make sure user exists",
+					"command": "sudo adduser $USERNAME; sudo usermod -aG sudo $USERNAME; mkdir -p /home/$USERNAME/.ssh"
+				}
+			],
+			"postRestore": []
+		}

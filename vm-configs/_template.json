@@ -1,0 +1,67 @@
+{
+	"title": "vpsId.countryCode.vaizer.net", // may be used as $TITLE anywhere in config below
+	"username":"ubuntu", // may be used as $USERNAME anywhere in config below
+	"cockpitUsername": "vzr", // may be used as $COCKPIT_USERNAME anywhere in config below
+	// Also $BACKUP_PATH may be used  anywhere in config below, 
+	// it will be replaced with backup folder full path
+	"softwares": [
+		// Software: {
+		// 		name: String,
+    	//    	packages: [String, String...] <== Those will be installed on the beginning on restore procedure using 'apt install -y'
+		// 		backup: [
+		// 			{
+		// 				name: String,
+		// 				type: "DIR" or "FILE" or "COMMAND" <== COMMAND type of backup is not being restored!!! You should add it into a separate step into pre/post restore stages
+		// 				path: String 
+		// 			}
+		// 		],
+		// 		preRestore: [
+		//			these are commands that are being run before files/dirs from 'backup' section are restored
+		// 			{
+		// 				name: String,
+		// 				command: String 
+		// 			}
+		// 		],
+		// 		postRestore: [
+		//			these are commands that are being run after files/dirs from 'backup' section are restored
+		// 			{
+		// 				name: String,
+		// 				command: String 
+		// 			}
+		// 		]
+		// }
+		{
+			"name": "cockpit",
+			"packages": ["cockpit"],
+			"backup": [
+				{
+					"name": "cockpit-user-ssh",
+					"type": "DIR",
+					"path": "/home/$COCKPIT_USERNAME/.ssh"
+				},
+				{
+					"name": "cockpit-override-conf",
+					"type": "FILE",
+					"path": "/etc/systemd/system/cockpit.socket.d/override.conf"
+				},
+				{
+					"name": "some-generic-command",
+					"type": "COMMAND",
+					"path": "cat /etc/cockpit/aloe.txt > $BACKUP_PATH"
+				}
+			],
+			"preRestore": [
+				{
+					"name": "add cockpit user",
+					"command": "sudo adduser $COCKPIT_USERNAME; sudo usermod -aG sudo $COCKPIT_USERNAME; mkdir -p /home/$COCKPIT_USERNAME/.ssh; mkdir -p /etc/systemd/system/cockpit.socket.d"
+				}
+			],
+			"postRestore": [
+				{
+					"name":"Restart cockpit",
+					"command": "systemctl enable --now cockpit.socket; systemctl restart cockpit.socket"
+				}
+			]
+		}
+	]
+}
