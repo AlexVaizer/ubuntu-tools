@@ -18,7 +18,7 @@ opt_parser = OptionParser.new do |opts|
     	options.conf = path
 	end
 	opts.on("--cockpit-user-password STRING", "Password for a cockpit user.") do |p|
-    	options.cockpitUserPassword. = p
+    	options.cockpitUserPassword = p
 	end
 	opts.on("--[no-]op", "Enable (--op) or disable (--no-op) actual files copying. (Default: --no-op)") do |o|
     	options.op = o
