@@ -1,8 +1,14 @@
-		{
 		// !!! DO NOT USE in case you transferring backup from one machine to another 
 		// and want them both to be available at the same time
+		{
 			"name": "openvpn",
-			"packages": [],
+			"customAptRepoCommands": [
+					"mkdir -p /etc/apt/keyrings",
+					"curl -fsSL https://aptPackages.openvpn.net/aptPackages-repo.gpg | tee /etc/apt/keyrings/openvpn.asc",
+					"echo \"deb [signed-by=/etc/apt/keyrings/openvpn.asc] https://aptPackages.openvpn.net/openvpn3/debian $(lsb_release -c -s) main\" | tee /etc/apt/sources.list.d/openvpn-aptPackages.list; ",
+					"apt update"
+			],
+			"aptPackages": ["python3-openvpn-connector-setup"],
 			"backup": [
 				{
 					"name": "openvpn-config",
@@ -12,20 +18,8 @@
 			],
 			"preRestore": [
 				{
-					"name":"Install the OpenVPN repository key used by the OpenVPN packages",
-					"command": "mkdir -p /etc/apt/keyrings;curl -fsSL https://packages.openvpn.net/packages-repo.gpg | tee /etc/apt/keyrings/openvpn.asc"
-				},
-				{
-					"name":"Add the OpenVPN repository",
-					"command": "echo \"deb [signed-by=/etc/apt/keyrings/openvpn.asc] https://packages.openvpn.net/openvpn3/debian $(lsb_release -c -s) main\" | tee /etc/apt/sources.list.d/openvpn-packages.list; apt update"
-				},
-				{
 					"name":"Enable IP Forwarding",
 					"command": "sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g' /etc/sysctl.conf; sed -i 's/#net.ipv6.conf.all.forwarding=1/net.ipv6.conf.all.forwarding=1/g' /etc/sysctl.conf; sysctl -p"
-				},
-				{
-					"name":"Install OpenVPN client",
-					"command": "apt install -y python3-openvpn-connector-setup"
 				},
 				{
 					"name": "Restore openvpn config",
@@ -35,7 +29,7 @@
 			"postRestore": [
 				{
 					"name": "Start service",
-					"command": "systemctl enable --now openvpn3-session@CloudConnexa.service"
+					"command": "systemctl enable openvpn3-session@CloudConnexa.service"
 				}
 			]
 		}

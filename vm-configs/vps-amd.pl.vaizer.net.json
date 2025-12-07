@@ -27,7 +27,7 @@
 		// }
 		{
 			"name": "network",
-			"packages": ["iptables-persistent", "netfilter-persistent"],
+			"aptPackages": ["iptables-persistent", "netfilter-persistent"],
 			"backup": [
 				{
 					"name": "iptables-rules",
@@ -63,7 +63,7 @@
 		},
 		{
 			"name": "nginx",
-			"packages": ["nginx"],
+			"aptPackages": ["nginx"],
 			"backup": [
 				{
 					"name": "nginx-configs",
@@ -85,7 +85,7 @@
 		},
 		{
 			"name": "v2ray",
-			"packages": ["v2ray"],
+			"aptPackages": ["v2ray"],
 			"backup": [
 				{
 					"name": "v2ray-configs",
@@ -119,7 +119,7 @@
 		},
 		{
 			"name": "fail2ban",
-			"packages": ["fail2ban"],
+			"aptPackages": ["fail2ban"],
 			"backup": [
 				{
 					"name": "fail2ban-configs",
@@ -138,7 +138,7 @@
 		},
 		{
 			"name": "letsencrypt",
-			"packages": [],
+			"aptPackages": [],
 			"backup": [
 				{
 					"name": "aws-creds",
@@ -166,7 +166,12 @@
 		},
 		{
 			"name": "mongodb",
-			"packages":[],
+			"customAptRepoCommands": [
+				"curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc | gpg -o /usr/share/keyrings/mongodb-server-8.0.gpg --dearmor",
+				"echo 'deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse' | tee /etc/apt/sources.list.d/mongodb-org-8.0.list",
+				"apt update -y"
+			],
+			"aptPackages":["mongodb-org"],
 			"backup": [
 				{
 					"name": "mongo-config",
@@ -180,10 +185,6 @@
 				}
 			],
 			"preRestore": [
-				{
-					"name": "Install mongoDb",
-					"command": "curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc | gpg -o /usr/share/keyrings/mongodb-server-8.0.gpg --dearmor; echo 'deb [ arch=amd64,arm64 signed-by=/usr/share/keyrings/mongodb-server-8.0.gpg ] https://repo.mongodb.org/apt/ubuntu noble/mongodb-org/8.0 multiverse' | tee /etc/apt/sources.list.d/mongodb-org-8.0.list ; apt update -y; apt install -y mongodb-org"
-				},
 				{
 					"name": "Start mongod service temporarily with default config to upload backup",
 					"command": "systemctl start mongod.service"
@@ -202,7 +203,7 @@
 		},
 		{
 			"name": "wallet",
-			"packages": ["curl","ruby-full", "ruby-full", "ruby-bundler", "ruby-dev", "net-tools", "build-essential", "zlib1g-dev", "libreadline-dev", "libssl-dev", "libcurl4-openssl-dev"],
+			"aptPackages": ["curl","ruby-full", "ruby-full", "ruby-bundler", "ruby-dev", "net-tools", "build-essential", "zlib1g-dev", "libreadline-dev", "libssl-dev", "libcurl4-openssl-dev"],
 			"backup": [
 				{
 					"name": "wallet-var",
@@ -234,7 +235,7 @@
 		},
 		{
 			"name": "cockpit",
-			"packages": ["cockpit"],
+			"aptPackages": ["cockpit"],
 			"backup": [
 				{
 					"name": "cockpit-user-ssh",
@@ -262,7 +263,13 @@
 		},
 		{
 			"name": "openvpn",
-			"packages": [],
+			"customAptRepoCommands": [
+					"mkdir -p /etc/apt/keyrings",
+					"curl -fsSL https://aptPackages.openvpn.net/aptPackages-repo.gpg | tee /etc/apt/keyrings/openvpn.asc",
+					"echo \"deb [signed-by=/etc/apt/keyrings/openvpn.asc] https://aptPackages.openvpn.net/openvpn3/debian $(lsb_release -c -s) main\" | tee /etc/apt/sources.list.d/openvpn-aptPackages.list; ",
+					"apt update"
+			],
+			"aptPackages": ["python3-openvpn-connector-setup"],
 			"backup": [
 				{
 					"name": "openvpn-config",
@@ -272,20 +279,8 @@
 			],
 			"preRestore": [
 				{
-					"name":"Install the OpenVPN repository key used by the OpenVPN packages",
-					"command": "mkdir -p /etc/apt/keyrings;curl -fsSL https://packages.openvpn.net/packages-repo.gpg | tee /etc/apt/keyrings/openvpn.asc"
-				},
-				{
-					"name":"Add the OpenVPN repository",
-					"command": "echo \"deb [signed-by=/etc/apt/keyrings/openvpn.asc] https://packages.openvpn.net/openvpn3/debian $(lsb_release -c -s) main\" | tee /etc/apt/sources.list.d/openvpn-packages.list; apt update"
-				},
-				{
 					"name":"Enable IP Forwarding",
 					"command": "sed -i 's/#net.ipv4.ip_forward=1/net.ipv4.ip_forward=1/g' /etc/sysctl.conf; sed -i 's/#net.ipv6.conf.all.forwarding=1/net.ipv6.conf.all.forwarding=1/g' /etc/sysctl.conf; sysctl -p"
-				},
-				{
-					"name":"Install OpenVPN client",
-					"command": "apt install -y python3-openvpn-connector-setup"
 				},
 				{
 					"name": "Restore openvpn config",
@@ -295,7 +290,7 @@
 			"postRestore": [
 				{
 					"name": "Start service",
-					"command": "systemctl enable --now openvpn3-session@CloudConnexa.service"
+					"command": "systemctl enable openvpn3-session@CloudConnexa.service"
 				}
 			]
 		}

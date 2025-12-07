@@ -7,7 +7,8 @@
 	"softwares": [
 		// Software: {
 		// 		name: String,
-    	//    	packages: [String, String...] <== Those will be installed on the beginning on restore procedure using 'apt install -y'
+		//		customAptRepoCommands: [String, String...]
+    	//    	aptPackages: [String, String...] <== Those will be installed on the beginning on restore procedure using 'apt install -y'
 		// 		backup: [
 		// 			{
 		// 				name: String,
@@ -32,7 +33,8 @@
 		// }
 		{
 			"name": "cockpit",
-			"packages": ["cockpit"],
+			"customAptRepoCommands": ["mkdir -p /etc/apt/keyrings;curl -fsSL https://packages.openvpn.net/packages-repo.gpg | tee /etc/apt/keyrings/openvpn.asc", "echo \"deb [signed-by=/etc/apt/keyrings/openvpn.asc] https://packages.openvpn.net/openvpn3/debian $(lsb_release -c -s) main\" | tee /etc/apt/sources.list.d/openvpn-packages.list; apt update"],
+			"aptPackages": ["cockpit", "python3-openvpn-connector-setup"],
 			"backup": [
 				{
 					"name": "cockpit-user-ssh",
@@ -47,7 +49,7 @@
 				{
 					"name": "some-generic-command",
 					"type": "COMMAND",
-					"path": "cat /etc/cockpit/aloe.txt > $BACKUP_PATH"
+					"path": "iptables-save > $BACKUP_PATH/network/iptables.txt"
 				}
 			],
 			"preRestore": [
