@@ -10,18 +10,22 @@ options = OpenStruct.new(
 	conf:    './backup_config.json',
 	op:      false,  
 	verbose: false,
+	cockpitUserPassword: ''
 )
 opt_parser = OptionParser.new do |opts|
 	opts.banner = "Usage: backup_script.rb --conf PATH -v"
 	opts.on("--conf PATH", "Path to config file. (Default: ./backup_config.json)") do |path|
-    options.conf = path
-  end
-	opts.on("--[no-]op", "Enable operation mode. Use --no-op to dry-run. (Default: false)") do |o|
+    	options.conf = path
+	end
+	opts.on("--cockpit-user-password STRING", "Password for a cockpit user.") do |p|
+    	options.cockpitUserPassword. = p
+	end
+	opts.on("--[no-]op", "Enable (--op) or disable (--no-op) actual files copying. (Default: --no-op)") do |o|
     	options.op = o
 	end
 
-	opts.on("-v", "--verbose", "Enable verbose output. (Default: false)") do
-	options.verbose = true
+	opts.on("-v", "--verbose", "Enable verbose output for files copying. (Default: false)") do
+		options.verbose = true
 	end
 	opts.on("-h", "--help", "Prints this help message.") do
 		puts opts
@@ -35,12 +39,14 @@ rescue OptionParser::InvalidOption => e
 	puts opt_parser
 	exit(1)
 end
+
 VERBOSE = options.verbose
 NOOP = !options.op
 CONFIG_PATH = File.expand_path(options.conf)
 CONFIG = JSON.parse(File.read(CONFIG_PATH))
 START_TIME = Time.now.strftime("%Y-%m-%d_%H-%M-%S")
 COCKPIT_USERNAME = CONFIG["cockpitUsername"] || ""
+COCKPIT_USER_PASSWORD = options.cockpitUserPassword
 ROOT_PATH = File.expand_path(`pwd`.chomp)
 TITLE = CONFIG['title'] || ""
 BACKUP_PATH = File.join(ROOT_PATH,"#{TITLE}-#{START_TIME}")
@@ -51,7 +57,7 @@ UNTAR_COMMAND = "tar -xzvf /home/#{USERNAME}/#{ARCHIVE_NAME}"
 SECTIONS_SEPARATOR = "################################################"
 H1_PREFIX = "########"
 puts "#{H1_PREFIX} ENTER A PASSWORD FOR COCKPIT_USER:"
-COCKPIT_USER_PASSWORD = gets.chomp
+
 RESTORE_SH_ERB = "#!/bin/bash
 set -x
 <%=SECTIONS_SEPARATOR%>
