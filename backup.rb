@@ -16,7 +16,8 @@ ARCHIVE_NAME = "#{BACKUP_PATH}.tar.gz".split("/").last
 UNTAR_COMMAND = "tar -xzvf /home/#{USERNAME}/#{ARCHIVE_NAME}"
 SECTIONS_SEPARATOR = "################################################"
 H1_PREFIX = "########"
-
+puts "#{H1_PREFIX} ENTER A PASSWORD FOR COCKPIT_USER:"
+COCKPIT_USER_PASSWORD = gets.chomp
 RESTORE_SH_ERB = "#!/bin/bash
 set -x
 <%=SECTIONS_SEPARATOR%>
@@ -69,8 +70,6 @@ def doBackupCommandsAndPrepareRestoreCommands(confHash = {})
 	puts SECTIONS_SEPARATOR
 	puts "#{H1_PREFIX} Backing up files"
 	puts "#{H1_PREFIX} (NOOP MODE IS ON, NO FILES COPYING)" if NOOP
-	puts "#{H1_PREFIX} ENTER A PASSWORD FOR COCKPIT_USER:"
-	COCKPIT_USER_PASSWORD = gets.chomp
 	puts SECTIONS_SEPARATOR
 	@preCommands = []
 	@restoreCommands = []
