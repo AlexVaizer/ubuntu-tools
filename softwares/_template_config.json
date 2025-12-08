@@ -2,10 +2,9 @@
 	"title": "vpsId.countryCode.vaizer.net", // may be used as $TITLE anywhere in config below
 	"username":"ubuntu", // may be used as $USERNAME anywhere in config below
 	"cockpitUsername": "vzr", // may be used as $COCKPIT_USERNAME anywhere in config below
-	"cockpitUserPassword": "someRanDomPhraze834587",
+	"cockpitUserPassword": "someRanDomPhraze834587", // $COCKPIT_USER_PASSWORD taken from command line params overrides this
 	// Also $BACKUP_PATH may be used  anywhere in config below, 
 	// it will be replaced with backup folder full path
-	// $COCKPIT_USER_PASSWORD is taken from command line params
 	"softwares": [
 		// Software: {
 		// 		name: String,
@@ -55,9 +54,13 @@
 				}
 			],
 			"preRestore": [
-								{
+				{
 					"name": "add cockpit user",
 					"command": "useradd -m -p $(openssl passwd -6 $COCKPIT_USER_PASSWORD) -s /bin/bash $COCKPIT_USERNAME; usermod -aG sudo $COCKPIT_USERNAME; mkdir -p /home/$COCKPIT_USERNAME/.ssh; mkdir -p /etc/systemd/system/cockpit.socket.d"
+				},
+				{
+					"name": "restore thing that custom command did back up",
+					"command": "iptables-restore < $BACKUP_PATH/network/iptables.txt; netfilter-persistent save"
 				}
 			],
 			"postRestore": [
