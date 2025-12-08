@@ -4,6 +4,7 @@
 	"cockpitUsername": "vzr", // may be used as $COCKPIT_USERNAME anywhere in config below
 	// Also $BACKUP_PATH may be used  anywhere in config below, 
 	// it will be replaced with backup folder full path
+	// $COCKPIT_USER_PASSWORD is taken from command line params
 	"softwares": [
 		// Software: {
 		// 		name: String,

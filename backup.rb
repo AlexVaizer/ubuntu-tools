@@ -10,14 +10,14 @@ options = OpenStruct.new(
 	conf:    './backup_config.json',
 	op:      false,  
 	verbose: false,
-	cockpitUserPassword: 'someRanDomPhraze834587'
+	cockpitUserPassword: nil
 )
 opt_parser = OptionParser.new do |opts|
 	opts.banner = "Usage: sudo ruby backup.rb --conf PATH -v --cockpit-user-password PASSWORD"
 	opts.on("-c PATH", "--conf PATH", "Path to config file. (Default: ./backup_config.json)") do |path|
     	options.conf = path
 	end
-	opts.on("-p STRING", "--cockpit-user-password STRING", "Password for a cockpit user. (Default: 'someRanDomPhraze834587')") do |p|
+	opts.on("-p STRING", "--cockpit-user-password STRING", "Password for a cockpit user, sent via this param has highest priority. Second Priority is CONFIG['cockpitUserPassword']), 'someRanDomPhraze834587' if empty in both places") do |p|
     	options.cockpitUserPassword = p
 	end
 	opts.on("-o", "--[no-]op", "Enable (--op) or disable (--no-op) actual files copying. (Default: --no-op)") do |o|
@@ -45,7 +45,7 @@ CONFIG_PATH = File.expand_path(options.conf)
 CONFIG = JSON.parse(File.read(CONFIG_PATH))
 START_TIME = Time.now.strftime("%Y-%m-%d_%H-%M-%S")
 COCKPIT_USERNAME = CONFIG["cockpitUsername"] || ""
-COCKPIT_USER_PASSWORD = options.cockpitUserPassword
+COCKPIT_USER_PASSWORD = options.cockpitUserPassword || CONFIG["cockpitUserPassword"] || "someRanDomPhraze834587"
 ROOT_PATH = File.expand_path(`pwd`.chomp)
 TITLE = CONFIG['title'] || ""
 BACKUP_PATH = File.join(ROOT_PATH,"#{TITLE}-#{START_TIME}")
@@ -79,12 +79,15 @@ apt install -y <%=@aptPackages.join(' ')%>
 
 <%=SECTIONS_SEPARATOR%>
 <%=H1_PREFIX%> Stage 4: Restarting and enabling services <%=@postCommands.join('')%>
-<%=SECTIONS_SEPARATOR%>"
+<%=SECTIONS_SEPARATOR%>
+<%=H1_PREFIX%> END OF RESTORE SCRIPT
+<%=SECTIONS_SEPARATOR%>
+"
 
 HEADING = [
 	SECTIONS_SEPARATOR,
 	"#{H1_PREFIX} Backing up files",
-	"#{H1_PREFIX} Configuration: ",
+	"#{H1_PREFIX} Script Configuration:",
 	"#{H1_PREFIX}   * Config File path: #{CONFIG_PATH}",
 	"#{H1_PREFIX}   * Operational mode: #{!NOOP}",
 	"#{H1_PREFIX}   * Verbose output: #{VERBOSE}",
@@ -92,15 +95,15 @@ HEADING = [
 	SECTIONS_SEPARATOR,
 	"#{H1_PREFIX} Backup Configuration: ",
 	"#{H1_PREFIX}   * Server Name: #{TITLE}",
+	"#{H1_PREFIX}   * Softwares: #{CONFIG['softwares'].map { |e| e['name'] }}",
+	"#{H1_PREFIX}   * SSH User: #{USERNAME}",
 	"#{H1_PREFIX}   * Cockpit User: #{COCKPIT_USERNAME}",
-	"#{H1_PREFIX}   * Cockpit User Password: #{COCKPIT_USER_PASSWORD}",
+	"#{H1_PREFIX}   * Cockpit User Password: '#{COCKPIT_USER_PASSWORD}'",
 	SECTIONS_SEPARATOR,
 	"#{H1_PREFIX} BACKING UP STARTED",
 	SECTIONS_SEPARATOR
 ]
 FOOTER = [
-	"#{H1_PREFIX} END OF RESTORE SCRIPT",
-	"#{SECTIONS_SEPARATOR}",
 	"\n\n#{SECTIONS_SEPARATOR}",
 	"#{H1_PREFIX} All needed files were archived. See below for hints on how to copy backup and restore it",
 	"#{H2_PREFIX} scp command: to copy file FROM this server: ",
@@ -176,7 +179,9 @@ def doBackupCommandsAndPrepareRestoreCommands(confHash = {})
 			file.puts(content.result(binding))
 		end
 		puts "#{H1_PREFIX} Archiving the backup"
+		puts "#{H2_PREFIX} #{TAR_COMMAND}"
 		system(TAR_COMMAND)
+		puts "#{SECTIONS_SEPARATOR}"
 	else
 		puts "\n#{SECTIONS_SEPARATOR}"
 		puts "#{H1_PREFIX} RESTORE SCRIPT BELOW"
