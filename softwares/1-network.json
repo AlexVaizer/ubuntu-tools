@@ -1,6 +1,6 @@
 		{
 			"name": "network",
-			"packages": ["iptables-persistent", "netfilter-persistent"],
+			"aptPackages": ["iptables-persistent", "netfilter-persistent"],
 			"backup": [
 				{
 					"name": "iptables-rules",
@@ -16,6 +16,11 @@
 					"name": "user-ssh-keys",
 					"type": "DIR",
 					"path": "/home/$USERNAME/.ssh/"
+				},
+				{
+					"name": "root-ssh-keys",
+					"type": "DIR",
+					"path": "/root/.ssh/"
 				}
 			],
 			"preRestore": [
@@ -28,8 +33,8 @@
 					"command": "iptables-restore < $BACKUP_PATH/network/iptables.txt; netfilter-persistent save"
 				},
 				{
-					"name": "Make sure user exists",
-					"command": "sudo adduser $USERNAME; sudo usermod -aG sudo $USERNAME; mkdir -p /home/$USERNAME/.ssh"
+					"name": "Make sure user and folders exists",
+					"command": "useradd -m -s /bin/bash $USERNAME; usermod -aG sudo $USERNAME; mkdir -p /home/$USERNAME/.ssh; mkdir -p /root/.ssh"
 				}
 			],
 			"postRestore": []

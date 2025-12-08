@@ -1,6 +1,6 @@
 		{
 			"name": "cockpit",
-			"packages": ["cockpit"],
+			"aptPackages": ["cockpit"],
 			"backup": [
 				{
 					"name": "cockpit-user-ssh",
@@ -16,7 +16,7 @@
 			"preRestore": [
 				{
 					"name": "add cockpit user",
-					"command": "sudo adduser $COCKPIT_USERNAME; sudo usermod -aG sudo $COCKPIT_USERNAME; mkdir -p /home/$COCKPIT_USERNAME/.ssh; mkdir -p /etc/systemd/system/cockpit.socket.d"
+					"command": "useradd -m -p $(openssl passwd -6 $COCKPIT_USER_PASSWORD) -s /bin/bash $COCKPIT_USERNAME; sudo usermod -aG sudo $COCKPIT_USERNAME; mkdir -p /home/$COCKPIT_USERNAME/.ssh; mkdir -p /etc/systemd/system/cockpit.socket.d"
 				}
 			],
 			"postRestore": [

@@ -53,8 +53,10 @@ USERNAME = CONFIG["username"]
 TAR_COMMAND = "tar -czf #{BACKUP_PATH}.tar.gz -C #{File.dirname(BACKUP_PATH)} #{File.basename(BACKUP_PATH)}"
 ARCHIVE_NAME = "#{BACKUP_PATH}.tar.gz".split("/").last
 UNTAR_COMMAND = "tar -xzvf /home/#{USERNAME}/#{ARCHIVE_NAME}"
-SECTIONS_SEPARATOR = "################################################"
-H1_PREFIX = "########"
+H2_PREFIX = "###"
+SECTIONS_SEPARATOR = "#{H2_PREFIX * 40}"
+H1_PREFIX = "#{H2_PREFIX * 2}"
+
 RESTORE_SH_ERB = "#!/bin/bash
 set -x
 <%=SECTIONS_SEPARATOR%>
@@ -101,15 +103,15 @@ FOOTER = [
 	"#{SECTIONS_SEPARATOR}",
 	"\n\n#{SECTIONS_SEPARATOR}",
 	"#{H1_PREFIX} All needed files were archived. See below for hints on how to copy backup and restore it",
-	"#### scp command: to copy file FROM this server: ",
+	"#{H2_PREFIX} scp command: to copy file FROM this server: ",
 	"scp #{TITLE}:#{BACKUP_PATH}.tar.gz ~/Desktop",
 	"#{SECTIONS_SEPARATOR}",
 	"#{H1_PREFIX} Short restore manual",
-	"#### scp command: to copy file to this server to restore:",
+	"#{H2_PREFIX} scp command: to copy file to this server to restore:",
 	"scp ~/Desktop/#{ARCHIVE_NAME} #{TITLE}:/home/ubuntu/",
-	"#### untar command:",
+	"#{H2_PREFIX} untar command:",
 	UNTAR_COMMAND,
-	"#### run restore script:",
+	"#{H2_PREFIX} run restore script:",
 	"cd /home/ubuntu/#{TITLE}-#{START_TIME}/; sudo bash ./restore.sh",
 	"#{SECTIONS_SEPARATOR}\n"
 ]
@@ -144,13 +146,13 @@ def doBackupCommandsAndPrepareRestoreCommands(confHash = {})
 				FileUtils.mkdir_p(categoryPath, verbose: (VERBOSE || NOOP), noop: NOOP)
 				FileUtils.cp(gsubVars(e['path']),categoryPath , noop: NOOP ,verbose: (VERBOSE || NOOP))
 				command = "cp -v ./#{s['name']}/#{e['name']}/#{e['path'].split("/").last} #{e['path']}"
-				@restoreCommands.push("\n#### #{e['name']}\n")
+				@restoreCommands.push("\n#{H2_PREFIX} #{e['name']}\n")
 				@restoreCommands.push(command)
 			elsif e["type"] == "DIR"
 				pathUnlast = File.join(e['path'].split('/')[0..-1])
 				FileUtils.cp_r(gsubVars(e['path']), softwarePath, verbose: (VERBOSE || NOOP), noop: NOOP)
 				command = "cp -vr ./#{s['name']}/#{e['path'].split("/").last}/* #{gsubVars(pathUnlast)}"
-				@restoreCommands.push("\n#### #{e['name']}\n")
+				@restoreCommands.push("\n#{H2_PREFIX} #{e['name']}\n")
 				@restoreCommands.push(command)
 			elsif e["type"] == "COMMAND"
 				puts "RUNNING COMMAND #{gsubVars(e['path'])}" if NOOP
@@ -184,6 +186,6 @@ def doBackupCommandsAndPrepareRestoreCommands(confHash = {})
 	puts FOOTER.join("\n")
 end
 def preparePrePostCommands(preRestoreArray = [])
-	return preRestoreArray.map { |e| "\n#### #{e["name"]}\n#{gsubVarsRestore(e["command"])}" }
+	return preRestoreArray.map { |e| "\n#{H2_PREFIX} #{e["name"]}\n#{gsubVarsRestore(e["command"])}" }
 end
 doBackupCommandsAndPrepareRestoreCommands(CONFIG)

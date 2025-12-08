@@ -108,7 +108,7 @@
 		{
 			"name": "fail2ban",
 			"aptPackages": ["fail2ban"],
-			"backup": [
+			"backup": [ 
 				{
 					"name": "fail2ban-configs",
 					"type": "DIR",
@@ -278,10 +278,11 @@
 				}
 			],
 			"postRestore": [
-				{
-					"name": "Start service",
-					"command": "systemctl enable openvpn3-session@CloudConnexa.service"
-				}
+				// Commented because can break another connector
+				//{ 
+				//	"name": "Start service",
+				//	"command": "systemctl enable openvpn3-session@CloudConnexa.service"
+				//}
 			]
 		}
 	]
