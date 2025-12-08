@@ -124,18 +124,18 @@ def doBackupCommandsAndPrepareRestoreCommands(confHash = {})
 	@aptPackages = []
 	confHash["softwares"].each do |s|
 		softwarePath = File.join(BACKUP_PATH, s['name'])
-		FileUtils.mkdir_p(softwarePath, verbose: (VERBOSE || NOOP)), noop: NOOP)
+		FileUtils.mkdir_p(softwarePath, verbose: (VERBOSE || NOOP), noop: NOOP)
 		s['backup'].each do |e|
 			if e['type'] == "FILE" then
 				categoryPath = File.join(softwarePath, e['name'])
-				FileUtils.mkdir_p(categoryPath, verbose: (VERBOSE || NOOP)), noop: NOOP)
-				FileUtils.cp(gsubVars(e['path']),categoryPath , noop: NOOP ,verbose: (VERBOSE || NOOP)))
+				FileUtils.mkdir_p(categoryPath, verbose: (VERBOSE || NOOP), noop: NOOP)
+				FileUtils.cp(gsubVars(e['path']),categoryPath , noop: NOOP ,verbose: (VERBOSE || NOOP))
 				command = "cp -v ./#{s['name']}/#{e['name']}/#{e['path'].split("/").last} #{e['path']}"
 				@restoreCommands.push("\n#### #{e['name']}\n")
 				@restoreCommands.push(command)
 			elsif e["type"] == "DIR"
 				pathUnlast = File.join(e['path'].split('/')[0..-1])
-				FileUtils.cp_r(gsubVars(e['path']), softwarePath, verbose: (VERBOSE || NOOP)), noop: NOOP)
+				FileUtils.cp_r(gsubVars(e['path']), softwarePath, verbose: (VERBOSE || NOOP), noop: NOOP)
 				command = "cp -vr ./#{s['name']}/#{e['path'].split("/").last}/* #{gsubVars(pathUnlast)}"
 				@restoreCommands.push("\n#### #{e['name']}\n")
 				@restoreCommands.push(command)
@@ -155,8 +155,8 @@ def doBackupCommandsAndPrepareRestoreCommands(confHash = {})
 	content = ERB.new(RESTORE_SH_ERB)
 	if !NOOP	
 		puts "#{H1_PREFIX} Saving backup/restore script and config"
-		FileUtils.cp(CONFIG_PATH, BACKUP_PATH,verbose: (VERBOSE || NOOP)))
-		FileUtils.cp(__FILE__, BACKUP_PATH,verbose: (VERBOSE || NOOP)))
+		FileUtils.cp(CONFIG_PATH, BACKUP_PATH,verbose: (VERBOSE || NOOP))
+		FileUtils.cp(__FILE__, BACKUP_PATH,verbose: (VERBOSE || NOOP))
 		File.open(File.join(BACKUP_PATH, 'restore.sh'), "w") do |file|
 			file.puts(content.result(binding))
 		end
