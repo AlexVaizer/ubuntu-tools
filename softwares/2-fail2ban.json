@@ -1,6 +1,6 @@
 		{
 			"name": "fail2ban",
-			"packages": ["fail2ban"],
+			"aptPackages": ["fail2ban"],
 			"backup": [
 				{
 					"name": "fail2ban-configs",

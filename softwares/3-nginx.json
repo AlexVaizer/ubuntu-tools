@@ -1,6 +1,6 @@
 		{
 			"name": "nginx",
-			"packages": ["nginx"],
+			"aptPackages": ["nginx"],
 			"backup": [
 				{
 					"name": "nginx-configs",

@@ -1,6 +1,6 @@
 		{
 			"name": "letsencrypt",
-			"packages": [],
+			"aptPackages": [],
 			"backup": [
 				{
 					"name": "aws-creds",

@@ -7,24 +7,40 @@ require 'ostruct'
 
 # Structure to hold configuration settings
 options = OpenStruct.new(
-	conf:    './backup_config.json',
+	conf:    './softwares/.template_config.json',
 	op:      false,  
 	verbose: false,
-	cockpitUserPassword: nil
+	cockpitUserPassword: nil,
+	cockpitUsername: nil,
+	username: nil,
+	combineMegazorb: [],
+	name: nil
 )
 opt_parser = OptionParser.new do |opts|
 	opts.banner = "Usage: sudo ruby backup.rb --conf PATH -v --cockpit-user-password PASSWORD"
-	opts.on("-c PATH", "--conf PATH", "Path to config file. (Default: ./backup_config.json)") do |path|
+	opts.on("-c PATH", "--conf PATH", "Path to config file. (Default: ./softwares/.template_config.json)") do |path|
     	options.conf = path
 	end
-	opts.on("-p STRING", "--cockpit-user-password STRING", "Password for a cockpit user, sent via this param has highest priority. Second Priority is CONFIG['cockpitUserPassword']), 'someRanDomPhraze834587' if empty in both places") do |p|
+	opts.on("-n SERVERNAME", "--name SERVERNAME", "Server Name, sent via this param has highest priority. Second Priority is CONFIG['title']") do |path|
+    	options.name = path
+	end
+	opts.on("-p STRING", "--cockpit-user-password STRING", "Password for a cockpit user, sent via this param has highest priority. Second Priority is CONFIG['cockpitUserPassword'], 'someRanDomPhraze834587' if empty in both places") do |p|
     	options.cockpitUserPassword = p
+	end
+	opts.on("-c STRING", "--cockpit-username STRING", "Username for a cockpit user, sent via this param has highest priority. Second Priority is CONFIG['cockpitUsername'], nil if empty in both places") do |p|
+    	options.cockpitUsername = p
+	end
+	opts.on("-u STRING", "--username STRING", "Username for a ssh user, sent via this param has highest priority. Second Priority is CONFIG['username'], nil if empty in both places") do |p|
+    	options.username = p
 	end
 	opts.on("-o", "--[no-]op", "Enable (--op) or disable (--no-op) actual files copying. (Default: --no-op)") do |o|
     	options.op = o
 	end
 	opts.on("-v", "--verbose", "Enable verbose output for files copying. (Default: false)") do
 		options.verbose = true
+	end
+	opts.on("--combine-megazorb SOFTWARES", "Enable JSON combining from softwares list, use file names from ./softwares/ folder, f.e.: --combine-megazorb '1-network.json,3-nginx.json'. (Default: false)") do |s|
+		options.combineMegazorb = s.split(',').sort if !s.nil?
 	end
 	opts.on("-h", "--help", "Prints this help message.") do
 		puts opts
@@ -42,14 +58,22 @@ end
 VERBOSE = options.verbose
 NOOP = !options.op
 CONFIG_PATH = File.expand_path(options.conf)
-CONFIG = JSON.parse(File.read(CONFIG_PATH))
 START_TIME = Time.now.strftime("%Y-%m-%d_%H-%M-%S")
-COCKPIT_USERNAME = CONFIG["cockpitUsername"] || ""
-COCKPIT_USER_PASSWORD = options.cockpitUserPassword || CONFIG["cockpitUserPassword"] || "someRanDomPhraze834587"
 ROOT_PATH = File.expand_path(`pwd`.chomp)
-TITLE = CONFIG['title'] || ""
+if !options.combineMegazorb.empty?
+	raise OptionParser::InvalidOption.new("You must set '--name SERVERNAME --username STRING --cockpit-user-password STRING --cockpit-username STRING' to use this mode") if options['name'].nil? || options['username'].nil? || options['cockpitUsername'].nil? || options['cockpitUserPassword'].nil?
+	megazorb = []
+	options.combineMegazorb.map { |e| megazorb.push(content = JSON.parse(File.read(File.expand_path("./softwares/#{e}")))) } 
+	CONFIG = {'softwares' => megazorb}
+	pp options.combineMegazorb
+else
+	CONFIG = JSON.parse(File.read(CONFIG_PATH))
+end
+TITLE = options.name || CONFIG['title'] || ""
 BACKUP_PATH = File.join(ROOT_PATH,"#{TITLE}-#{START_TIME}")
-USERNAME = CONFIG["username"]
+COCKPIT_USERNAME = options.cockpitUsername || CONFIG["cockpitUsername"] || ""
+COCKPIT_USER_PASSWORD = options.cockpitUserPassword || CONFIG["cockpitUserPassword"] || "someRanDomPhraze834587"
+USERNAME = options.username || CONFIG["username"]
 TAR_COMMAND = "tar -czf #{BACKUP_PATH}.tar.gz -C #{File.dirname(BACKUP_PATH)} #{File.basename(BACKUP_PATH)}"
 ARCHIVE_NAME = "#{BACKUP_PATH}.tar.gz".split("/").last
 UNTAR_COMMAND = "tar -xzvf /home/#{USERNAME}/#{ARCHIVE_NAME}"
