@@ -10,14 +10,14 @@ options = OpenStruct.new(
 	conf:    './backup_config.json',
 	op:      false,  
 	verbose: false,
-	cockpitUserPassword: ''
+	cockpitUserPassword: 'someRanDomPhraze834587'
 )
 opt_parser = OptionParser.new do |opts|
-	opts.banner = "Usage: backup_script.rb --conf PATH -v"
+	opts.banner = "Usage: sudo ruby backup.rb --conf PATH -v --cockpit-user-password PASSWORD"
 	opts.on("--conf PATH", "Path to config file. (Default: ./backup_config.json)") do |path|
     	options.conf = path
 	end
-	opts.on("--cockpit-user-password STRING", "Password for a cockpit user.") do |p|
+	opts.on("--cockpit-user-password STRING", "Password for a cockpit user. (Default: 'someRanDomPhraze834587')") do |p|
     	options.cockpitUserPassword = p
 	end
 	opts.on("--[no-]op", "Enable (--op) or disable (--no-op) actual files copying. (Default: --no-op)") do |o|
@@ -109,7 +109,16 @@ end
 def doBackupCommandsAndPrepareRestoreCommands(confHash = {})
 	puts SECTIONS_SEPARATOR
 	puts "#{H1_PREFIX} Backing up files"
-	puts "#{H1_PREFIX} (NOOP MODE IS ON, NO FILES COPYING)" if NOOP
+	puts "#{H1_PREFIX} Configuration: "
+	puts "#{H1_PREFIX}     * Config File path: #{CONFIG_PATH}"
+	puts "#{H1_PREFIX}     * Operational mode: #{!NOOP}"
+	puts "#{H1_PREFIX}     * Verbose output: #{VERBOSE}"
+	puts "#{H1_PREFIX}     * Backup root folder: #{BACKUP_PATH}"
+	puts SECTIONS_SEPARATOR
+	puts "#{H1_PREFIX} Backup Configuration: "
+	puts "#{H1_PREFIX}     * Server Name: #{TITLE}"
+	puts "#{H1_PREFIX}     * Cockpit User: #{COCKPIT_USERNAME}"
+	puts "#{H1_PREFIX}     * Cockpit User Password: #{COCKPIT_USER_PASSWORD}"
 	puts SECTIONS_SEPARATOR
 	@preCommands = []
 	@restoreCommands = []
@@ -118,18 +127,18 @@ def doBackupCommandsAndPrepareRestoreCommands(confHash = {})
 	@aptPackages = []
 	confHash["softwares"].each do |s|
 		softwarePath = File.join(BACKUP_PATH, s['name'])
-		FileUtils.mkdir_p(softwarePath, verbose: true, noop: NOOP)
+		FileUtils.mkdir_p(softwarePath, verbose: VERBOSE, noop: NOOP)
 		s['backup'].each do |e|
 			if e['type'] == "FILE" then
 				categoryPath = File.join(softwarePath, e['name'])
-				FileUtils.mkdir_p(categoryPath, verbose: true, noop: NOOP)
-				FileUtils.cp(gsubVars(e['path']),categoryPath , noop: NOOP ,verbose: true)
+				FileUtils.mkdir_p(categoryPath, verbose: VERBOSE, noop: NOOP)
+				FileUtils.cp(gsubVars(e['path']),categoryPath , noop: NOOP ,verbose: VERBOSE)
 				command = "cp -v ./#{s['name']}/#{e['name']}/#{e['path'].split("/").last} #{e['path']}"
 				@restoreCommands.push("\n#### #{e['name']}\n")
 				@restoreCommands.push(command)
 			elsif e["type"] == "DIR"
 				pathUnlast = File.join(e['path'].split('/')[0..-1])
-				FileUtils.cp_r(gsubVars(e['path']), softwarePath, verbose: true, noop: NOOP)
+				FileUtils.cp_r(gsubVars(e['path']), softwarePath, verbose: VERBOSE, noop: NOOP)
 				command = "cp -vr ./#{s['name']}/#{e['path'].split("/").last}/* #{gsubVars(pathUnlast)}"
 				@restoreCommands.push("\n#### #{e['name']}\n")
 				@restoreCommands.push(command)
@@ -149,8 +158,8 @@ def doBackupCommandsAndPrepareRestoreCommands(confHash = {})
 	content = ERB.new(RESTORE_SH_ERB)
 	if !NOOP	
 		puts "#{H1_PREFIX} Saving backup/restore script and config"
-		FileUtils.cp(CONFIG_PATH, BACKUP_PATH,verbose: true)
-		FileUtils.cp(__FILE__, BACKUP_PATH,verbose: true)
+		FileUtils.cp(CONFIG_PATH, BACKUP_PATH,verbose: VERBOSE)
+		FileUtils.cp(__FILE__, BACKUP_PATH,verbose: VERBOSE)
 		File.open(File.join(BACKUP_PATH, 'restore.sh'), "w") do |file|
 			file.puts(content.result(binding))
 		end
