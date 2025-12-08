@@ -1,15 +1,17 @@
 # Main Features:
  * Backs up Softwares on Ubuntu distros
  * Generates Bash script to restore(2) them back
-All of this configured via JSON Config File
+All of this configured via JSON Config File(1)
 
-Accepts Config file path as a first argument ("./backup_config.json" used if no arguments sent)
-
-By default runs in NOOP mode (does not copy files, just generate output)
-If you want it to actually backup things:
- * send 'true' as a second argument
- * must be run with sudo
- 
+```Usage
+ sudo ruby backup.rb --conf PATH -v --cockpit-user-password PASSWORD
+        --conf PATH                  Path to config file. (Default: ./backup_config.json)
+        --cockpit-user-password STRING
+                                     Password for a cockpit user. (Default: 'someRanDomPhraze834587')
+        --[no-]op                    Enable (--op) or disable (--no-op) actual files copying. (Default: --no-op)
+    -v, --verbose                    Enable verbose output for files copying. (Default: false)
+    -h, --help                       Prints this help message
+``` 
 _Example: `sudo ruby backup.rb ~/backups/configs/servername.example.com.json true`_
 
 (1) JSON Config File data model check in `vm-configs/_template.json`
