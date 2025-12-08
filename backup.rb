@@ -108,12 +108,11 @@ def gsubVarsGeneric(string)
 		.gsub("$TITLE", TITLE)
 end
 def gsubVars(string)
-	return string.gsubVarsGeneric
-		.gsub("$BACKUP_PATH", BACKUP_PATH)
+	return gsubVarsGeneric(string).gsub("$BACKUP_PATH", BACKUP_PATH)
+		
 end
 def gsubVarsRestore(string)
-	return string.gsubVarsGeneric
-		.gsub("$BACKUP_PATH", '.')
+	return gsubVarsGeneric(string).gsub("$BACKUP_PATH", '.')
 end
 def doBackupCommandsAndPrepareRestoreCommands(confHash = {})
 	puts HEADING.join("\n")
