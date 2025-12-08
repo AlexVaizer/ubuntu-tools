@@ -2,6 +2,7 @@
 	"title": "vpsId.countryCode.vaizer.net", // may be used as $TITLE anywhere in config below
 	"username":"ubuntu", // may be used as $USERNAME anywhere in config below
 	"cockpitUsername": "vzr", // may be used as $COCKPIT_USERNAME anywhere in config below
+	"cockpitUserPassword": "someRanDomPhraze834587",
 	// Also $BACKUP_PATH may be used  anywhere in config below, 
 	// it will be replaced with backup folder full path
 	// $COCKPIT_USER_PASSWORD is taken from command line params
