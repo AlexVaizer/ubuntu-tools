@@ -14,13 +14,13 @@ options = OpenStruct.new(
 )
 opt_parser = OptionParser.new do |opts|
 	opts.banner = "Usage: sudo ruby backup.rb --conf PATH -v --cockpit-user-password PASSWORD"
-	opts.on("--conf PATH", "Path to config file. (Default: ./backup_config.json)") do |path|
+	opts.on("-c PATH", "--conf PATH", "Path to config file. (Default: ./backup_config.json)") do |path|
     	options.conf = path
 	end
-	opts.on("--cockpit-user-password STRING", "Password for a cockpit user. (Default: 'someRanDomPhraze834587')") do |p|
+	opts.on("-p STRING", "--cockpit-user-password STRING", "Password for a cockpit user. (Default: 'someRanDomPhraze834587')") do |p|
     	options.cockpitUserPassword = p
 	end
-	opts.on("--[no-]op", "Enable (--op) or disable (--no-op) actual files copying. (Default: --no-op)") do |o|
+	opts.on("-o", "--[no-]op", "Enable (--op) or disable (--no-op) actual files copying. (Default: --no-op)") do |o|
     	options.op = o
 	end
 	opts.on("-v", "--verbose", "Enable verbose output for files copying. (Default: false)") do
