@@ -56,7 +56,7 @@ rescue OptionParser::InvalidOption => e
 end
 # Layout related constants. Keep first symbol '#' to be sure restore.sh does not get some text uncommented
 H2_PREFIX = "###"
-H1_PREFIX = "#{H2_PREFIX}#{'--'*3}"
+H1_PREFIX = "#{H2_PREFIX} #{'--'*3}"
 SECTIONS_SEPARATOR = "#{H2_PREFIX}#{'===' * 30}"
 
 VERBOSE = options.verbose
