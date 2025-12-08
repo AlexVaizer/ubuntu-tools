@@ -1,81 +1,96 @@
 ```Bash
-$ sudo ruby backup.rb --conf vm-configs/_template.json --cockpit-user-password pass123 --no-op --verbose
-########################################################################################################################
-###### Backing up files
-###### Script Configuration:
-######   * Config File path: /Users/machintoshhd/Documents/scripts/linux-tools/vm-configs/_template.json
-######   * Operational mode: false
-######   * Verbose output: true
-######   * Backup root folder: /Users/machintoshhd/Documents/scripts/linux-tools/vpsId.countryCode.vaizer.net-2025-12-08_04-07-00
-########################################################################################################################
-###### Backup Configuration:
-######   * Server Name: vpsId.countryCode.vaizer.net
-######   * Softwares: ["cockpit"]
-######   * SSH User: ubuntu
-######   * Cockpit User: vzr
-######   * Cockpit User Password: 'pass123'
-########################################################################################################################
-###### BACKING UP STARTED
-########################################################################################################################
-mkdir -p /Users/machintoshhd/Documents/scripts/linux-tools/vpsId.countryCode.vaizer.net-2025-12-08_04-07-00/cockpit
-cp -r /home/vzr/.ssh /Users/machintoshhd/Documents/scripts/linux-tools/vpsId.countryCode.vaizer.net-2025-12-08_04-07-00/cockpit
-mkdir -p /Users/machintoshhd/Documents/scripts/linux-tools/vpsId.countryCode.vaizer.net-2025-12-08_04-07-00/cockpit/cockpit-override-conf
-cp /etc/systemd/system/cockpit.socket.d/override.conf /Users/machintoshhd/Documents/scripts/linux-tools/vpsId.countryCode.vaizer.net-2025-12-08_04-07-00/cockpit/cockpit-override-conf
-RUNNING COMMAND iptables-save > /Users/machintoshhd/Documents/scripts/linux-tools/vpsId.countryCode.vaizer.net-2025-12-08_04-07-00/network/iptables.txt
-########################################################################################################################
-###### BACKING UP FINISHED
-########################################################################################################################
+ruby backup.rb --combine-megazord "1-network.json,3-nginx.json" --name 'vps-3' --username USER1 --cockpit-user-password SOMEPASSWORD --cockpit-username USER2
+###==========================================================================================
+###------ Backing up files
+###------ Script Configuration:
+###------   * Combine Megazord Mode: true
+###------   * Config File(s) path: ["./softwares/1-network.json", "./softwares/3-nginx.json"]
+###------   * Operational mode: false
+###------   * Verbose output: false
+###------   * Backup root folder: /Users/machintoshhd/Documents/scripts/linux-tools/vps-3-2025-12-08_19-49-34
+###==========================================================================================
+###------ Backup Configuration:
+###------   * Server Name: vps-3
+###------   * Softwares: ["network", "nginx"]
+###------   * SSH User: USER1
+###------   * Cockpit User: USER2
+###------   * Cockpit User Password: SOMEPASSWORD
+###==========================================================================================
+###------ BACKING UP STARTED
+###==========================================================================================
+mkdir -p /Users/machintoshhd/Documents/scripts/linux-tools/vps-3-2025-12-08_19-49-34/network
+iptables-save > /Users/machintoshhd/Documents/scripts/linux-tools/vps-3-2025-12-08_19-49-34/network/iptables.txt
+mkdir -p /Users/machintoshhd/Documents/scripts/linux-tools/vps-3-2025-12-08_19-49-34/network/vip-interface-settings; cp -v /etc/systemd/network/vip.* /Users/machintoshhd/Documents/scripts/linux-tools/vps-3-2025-12-08_19-49-34/network/vip-interface-settings
+cp -r /home/USER1/.ssh/ /Users/machintoshhd/Documents/scripts/linux-tools/vps-3-2025-12-08_19-49-34/network
+cp -r /root/.ssh/ /Users/machintoshhd/Documents/scripts/linux-tools/vps-3-2025-12-08_19-49-34/network
+mkdir -p /Users/machintoshhd/Documents/scripts/linux-tools/vps-3-2025-12-08_19-49-34/nginx
+cp -r /etc/nginx/ /Users/machintoshhd/Documents/scripts/linux-tools/vps-3-2025-12-08_19-49-34/nginx
+###==========================================================================================
+###------ BACKING UP FINISHED
+###------ ACTUAL FILES COPYING WAS SKIPPED AS NOOP MODE ENABLED
+###==========================================================================================
 
-########################################################################################################################
-###### RESTORE SCRIPT BELOW
-########################################################################################################################
+###==========================================================================================
+###------ RESTORE SCRIPT BELOW
+###==========================================================================================
 
 #!/bin/bash
 set -x
-########################################################################################################################
-###### This is an autogenerated restore script built on /Users/machintoshhd/Documents/scripts/linux-tools/vm-configs/_template.json config
-###### Be sure it is being run as ROOT
-########################################################################################################################
-###### Stage1: Installing custom repos and packages
+###==========================================================================================
+###------ This is an autogenerated restore script built on ["./softwares/1-network.json", "./softwares/3-nginx.json"] config
+###------ Be sure it is being run as ROOT
+###==========================================================================================
+###------ Stage1: Installing custom repos and packages
 DEBIAN_FRONTEND=noninteractive apt update; apt upgrade
-mkdir -p /etc/apt/keyrings;curl -fsSL https://packages.openvpn.net/packages-repo.gpg | tee /etc/apt/keyrings/openvpn.asc; echo "deb [signed-by=/etc/apt/keyrings/openvpn.asc] https://packages.openvpn.net/openvpn3/debian $(lsb_release -c -s) main" | tee /etc/apt/sources.list.d/openvpn-packages.list; apt update
-apt install -y cockpit python3-openvpn-connector-setup
-########################################################################################################################
 
-########################################################################################################################
-###### Stage 2: Setting up other pre-requisites
-### add cockpit user
-useradd -m -p $(openssl passwd -6 pass123) -s /bin/bash vzr; usermod -aG sudo vzr; mkdir -p /home/vzr/.ssh; mkdir -p /etc/systemd/system/cockpit.socket.d
-########################################################################################################################
+apt install -y iptables-persistent netfilter-persistent nginx
+###==========================================================================================
 
-########################################################################################################################
-###### Stage 3: Restoring backup files
-### cockpit-user-ssh
-cp -vr ./cockpit/.ssh/* /home/vzr/.ssh
-### cockpit-override-conf
-cp -v ./cockpit/cockpit-override-conf/override.conf /etc/systemd/system/cockpit.socket.d/override.conf
-########################################################################################################################
+###==========================================================================================
+###------ Stage 2: Setting up other pre-requisites
+### Restore VIP interface
+cp -v ./network/vip-interface-settings/vip.* /etc/systemd/network/; systemctl restart systemd-networkd
+### Restore iptables rules
+iptables-restore < ./network/iptables.txt; netfilter-persistent save
+### Make sure user and folders exists
+useradd -m -s /bin/bash USER1; usermod -aG sudo USER1; mkdir -p /home/USER1/.ssh; mkdir -p /root/.ssh
+###==========================================================================================
 
-########################################################################################################################
-###### Stage 4: Restarting and enabling services
-### Restart cockpit
-systemctl enable --now cockpit.socket; systemctl restart cockpit.socket
-########################################################################################################################
-###### END OF RESTORE SCRIPT
-########################################################################################################################
+###==========================================================================================
+###------ Stage 3: Restoring backup files
+### user-ssh-keys
+cp -vr ./network/.ssh/* /home/USER1/.ssh
+### root-ssh-keys
+cp -vr ./network/.ssh/* /root/.ssh
+### nginx-configs
+cp -vr ./nginx/nginx/* /etc/nginx
+###==========================================================================================
+
+###==========================================================================================
+###------ Stage 4: Restarting and enabling services
+### Remove default site
+rm -f /etc/nginx/sites-enabled/default; rm -f /etc/nginx/sites-available/default
+### Enable nginx
+systemctl enable --now nginx.service; systemctl restart nginx.service
+###==========================================================================================
+
+###==========================================================================================
+###------ !!! END OF RESTORE SCRIPT
+###==========================================================================================
 
 
-########################################################################################################################
-###### All needed files were archived. See below for hints on how to copy backup and restore it
+###==========================================================================================
+###------ All needed files were archived. See below for hints on how to copy backup and restore it
 ### scp command: to copy file FROM this server:
-scp vpsId.countryCode.vaizer.net:/Users/machintoshhd/Documents/scripts/linux-tools/vpsId.countryCode.vaizer.net-2025-12-08_04-07-00.tar.gz ~/Desktop
-########################################################################################################################
-###### Short restore manual
-### scp command: to copy file to this server to restore:
-scp ~/Desktop/vpsId.countryCode.vaizer.net-2025-12-08_04-07-00.tar.gz vpsId.countryCode.vaizer.net:/home/ubuntu/
+scp vps-3:/Users/machintoshhd/Documents/scripts/linux-tools/vps-3-2025-12-08_19-49-34.tar.gz ~/Desktop
+###==========================================================================================
+
+###------ To Retore:
+### copy file to this server
+scp ~/Desktop/vps-3-2025-12-08_19-49-34.tar.gz vps-3:/home/ubuntu/
 ### untar command:
-tar -xzvf /home/ubuntu/vpsId.countryCode.vaizer.net-2025-12-08_04-07-00.tar.gz
-### run restore script:
-cd /home/ubuntu/vpsId.countryCode.vaizer.net-2025-12-08_04-07-00/; sudo bash ./restore.sh
-########################################################################################################################
+tar -xzvf /home/USER1/vps-3-2025-12-08_19-49-34.tar.gz
+### run restore script
+cd /home/ubuntu/vps-3-2025-12-08_19-49-34/; sudo bash ./restore.sh
+###==========================================================================================
 ```

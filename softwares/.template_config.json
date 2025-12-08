@@ -1,10 +1,12 @@
 {
-	"title": "vpsId.countryCode.vaizer.net", // may be used as $TITLE anywhere in config below
-	"username":"ubuntu", // may be used as $USERNAME anywhere in config below
-	"cockpitUsername": "vzr", // may be used as $COCKPIT_USERNAME anywhere in config below
-	"cockpitUserPassword": "someRanDomPhraze834587", // $COCKPIT_USER_PASSWORD taken from command line params overrides this
-	// Also $BACKUP_PATH may be used  anywhere in config below, 
-	// it will be replaced with backup folder full path
+	"title": "vpsId.countryCode.vaizer.net",
+	"username":"ubuntu", 
+	"cockpitUsername": "vzr", 
+	"cockpitUserPassword": "someRanDomPhraze834587", 
+	// All all the above may be used  anywhere in config below, as 
+	// $COCKPIT_USER_PASSWORD, $COCKPIT_USERNAME, $USERNAME, $TITLE
+	// those be replaced with proper values from this config or 
+	// command line params with run backup.rb (latter has higher priority)
 	"softwares": [
 		// Software: {
 		// 		name: String,

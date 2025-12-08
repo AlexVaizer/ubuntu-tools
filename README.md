@@ -12,7 +12,7 @@ Usage: sudo ruby backup.rb --conf PATH -v --cockpit-user-password PASSWORD
     -u, --username STRING            Username for a ssh user, sent via this param has highest priority. Second Priority is CONFIG['username'], nil if empty in both places
     -o, --[no-]op                    Enable (--op) or disable (--no-op) actual files copying. (Default: --no-op)
     -v, --verbose                    Enable verbose output for files copying. (Default: false)
-        --combine-megazorb SOFTWARES Enable JSON combining from softwares list, use file names from ./softwares/ folder, f.e.: --combine-megazorb '1-network.json,3-nginx.json'. (Default: false)
+        --combine-megazord SOFTWARES Enable JSON combining from softwares list, use file names from ./softwares/ folder, f.e.: --combine-megazord '1-network.json,3-nginx.json'. (Default: false)
     -h, --help                       Prints this help message.
 ``` 
 

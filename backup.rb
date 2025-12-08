@@ -13,7 +13,7 @@ options = OpenStruct.new(
 	cockpitUserPassword: nil,
 	cockpitUsername: nil,
 	username: nil,
-	combineMegazorb: [],
+	combineMegazord: [],
 	name: nil
 )
 opt_parser = OptionParser.new do |opts|
@@ -39,8 +39,8 @@ opt_parser = OptionParser.new do |opts|
 	opts.on("-v", "--verbose", "Enable verbose output for files copying. (Default: false)") do
 		options.verbose = true
 	end
-	opts.on("--combine-megazorb SOFTWARES", "Enable JSON combining from softwares list, use file names from ./softwares/ folder, f.e.: --combine-megazorb '1-network.json,3-nginx.json'. (Default: false)") do |s|
-		options.combineMegazorb = s.split(',').sort if !s.nil?
+	opts.on("--combine-megazord SOFTWARES", "Enable JSON combining from softwares list, use file names from ./softwares/ folder, f.e.: --combine-megazord '1-network.json,3-nginx.json'. (Default: false)") do |s|
+		options.combineMegazord = s.split(',').sort if !s.nil?
 	end
 	opts.on("-h", "--help", "Prints this help message.") do
 		puts opts
@@ -54,32 +54,45 @@ rescue OptionParser::InvalidOption => e
 	puts opt_parser
 	exit(1)
 end
+# Layout related constants. Keep first symbol '#' to be sure restore.sh does not get some text uncommented
+H2_PREFIX = "###"
+H1_PREFIX = "#{H2_PREFIX}#{'--'*3}"
+SECTIONS_SEPARATOR = "#{H2_PREFIX}#{'===' * 30}"
 
 VERBOSE = options.verbose
 NOOP = !options.op
-CONFIG_PATH = File.expand_path(options.conf)
 START_TIME = Time.now.strftime("%Y-%m-%d_%H-%M-%S")
 ROOT_PATH = File.expand_path(`pwd`.chomp)
-if !options.combineMegazorb.empty?
-	raise OptionParser::InvalidOption.new("You must set '--name SERVERNAME --username STRING --cockpit-user-password STRING --cockpit-username STRING' to use this mode") if options['name'].nil? || options['username'].nil? || options['cockpitUsername'].nil? || options['cockpitUserPassword'].nil?
-	megazorb = []
-	options.combineMegazorb.map { |e| megazorb.push(content = JSON.parse(File.read(File.expand_path("./softwares/#{e}")))) } 
-	CONFIG = {'softwares' => megazorb}
-	pp options.combineMegazorb
+if options.combineMegazord.empty?
+	config = JSON.parse(File.read(File.expand_path(options.conf)))
+	config_file_path = [File.expand_path(options.conf)]
 else
-	CONFIG = JSON.parse(File.read(CONFIG_PATH))
+	raise OptionParser::InvalidOption.new("You must set '--name SERVERNAME --username STRING --cockpit-user-password STRING --cockpit-username STRING' to use this mode") if options['name'].nil? || options['username'].nil? || options['cockpitUsername'].nil? || options['cockpitUserPassword'].nil?
+	megazord = []
+	options.combineMegazord.map { |e| megazord.push(content = JSON.parse(File.read(File.expand_path("./softwares/#{e}")))) } 
+	config = {'softwares' => megazord}
+	config_file_path = options.combineMegazord.map { |e| "./softwares/#{e}" }
 end
-TITLE = options.name || CONFIG['title'] || ""
+CONFIG_PATH = config_file_path
+# CONST assigned depending on priority Command-Line-Params -> JSON Config -> Local Defaults
+TITLE = options['name'] || config['title'] || ""
 BACKUP_PATH = File.join(ROOT_PATH,"#{TITLE}-#{START_TIME}")
-COCKPIT_USERNAME = options.cockpitUsername || CONFIG["cockpitUsername"] || ""
-COCKPIT_USER_PASSWORD = options.cockpitUserPassword || CONFIG["cockpitUserPassword"] || "someRanDomPhraze834587"
-USERNAME = options.username || CONFIG["username"]
+COCKPIT_USERNAME = options.cockpitUsername || config["cockpitUsername"] || ""
+COCKPIT_USER_PASSWORD = options.cockpitUserPassword || config["cockpitUserPassword"] || "someRanDomPhraze834587"
+USERNAME = options.username || config["username"]
+
+CONFIG = { #Resulting Config with all Constants
+	"title" => TITLE,
+	"megazordCombined?" => !options.combineMegazord.empty?,
+	"username" => USERNAME,
+	"cockpitUsername" => COCKPIT_USERNAME,
+	"cockpitUserPassword" => COCKPIT_USER_PASSWORD,
+	"softwares" => config["softwares"]
+}
 TAR_COMMAND = "tar -czf #{BACKUP_PATH}.tar.gz -C #{File.dirname(BACKUP_PATH)} #{File.basename(BACKUP_PATH)}"
 ARCHIVE_NAME = "#{BACKUP_PATH}.tar.gz".split("/").last
 UNTAR_COMMAND = "tar -xzvf /home/#{USERNAME}/#{ARCHIVE_NAME}"
-H2_PREFIX = "###"
-SECTIONS_SEPARATOR = "#{H2_PREFIX * 40}"
-H1_PREFIX = "#{H2_PREFIX * 2}"
+
 
 RESTORE_SH_ERB = "#!/bin/bash
 set -x
@@ -104,7 +117,9 @@ apt install -y <%=@aptPackages.join(' ')%>
 <%=SECTIONS_SEPARATOR%>
 <%=H1_PREFIX%> Stage 4: Restarting and enabling services <%=@postCommands.join('')%>
 <%=SECTIONS_SEPARATOR%>
-<%=H1_PREFIX%> END OF RESTORE SCRIPT
+
+<%=SECTIONS_SEPARATOR%>
+<%=H1_PREFIX%> !!! END OF RESTORE SCRIPT
 <%=SECTIONS_SEPARATOR%>
 "
 
@@ -112,7 +127,8 @@ HEADING = [
 	SECTIONS_SEPARATOR,
 	"#{H1_PREFIX} Backing up files",
 	"#{H1_PREFIX} Script Configuration:",
-	"#{H1_PREFIX}   * Config File path: #{CONFIG_PATH}",
+	"#{H1_PREFIX}   * Combine Megazord Mode: #{!options.combineMegazord.empty?}",
+	"#{H1_PREFIX}   * Config File(s) path: #{config_file_path}",
 	"#{H1_PREFIX}   * Operational mode: #{!NOOP}",
 	"#{H1_PREFIX}   * Verbose output: #{VERBOSE}",
 	"#{H1_PREFIX}   * Backup root folder: #{BACKUP_PATH}",
@@ -122,7 +138,7 @@ HEADING = [
 	"#{H1_PREFIX}   * Softwares: #{CONFIG['softwares'].map { |e| e['name'] }}",
 	"#{H1_PREFIX}   * SSH User: #{USERNAME}",
 	"#{H1_PREFIX}   * Cockpit User: #{COCKPIT_USERNAME}",
-	"#{H1_PREFIX}   * Cockpit User Password: '#{COCKPIT_USER_PASSWORD}'",
+	"#{H1_PREFIX}   * Cockpit User Password: #{COCKPIT_USER_PASSWORD}",
 	SECTIONS_SEPARATOR,
 	"#{H1_PREFIX} BACKING UP STARTED",
 	SECTIONS_SEPARATOR
@@ -133,12 +149,13 @@ FOOTER = [
 	"#{H2_PREFIX} scp command: to copy file FROM this server: ",
 	"scp #{TITLE}:#{BACKUP_PATH}.tar.gz ~/Desktop",
 	"#{SECTIONS_SEPARATOR}",
-	"#{H1_PREFIX} Short restore manual",
-	"#{H2_PREFIX} scp command: to copy file to this server to restore:",
+	"",
+	"#{H1_PREFIX} To Retore:",
+	"#{H2_PREFIX} copy file to this server",
 	"scp ~/Desktop/#{ARCHIVE_NAME} #{TITLE}:/home/ubuntu/",
 	"#{H2_PREFIX} untar command:",
 	UNTAR_COMMAND,
-	"#{H2_PREFIX} run restore script:",
+	"#{H2_PREFIX} run restore script",
 	"cd /home/ubuntu/#{TITLE}-#{START_TIME}/; sudo bash ./restore.sh",
 	"#{SECTIONS_SEPARATOR}\n"
 ]
@@ -182,8 +199,8 @@ def doBackupCommandsAndPrepareRestoreCommands(confHash = {})
 				@restoreCommands.push("\n#{H2_PREFIX} #{e['name']}\n")
 				@restoreCommands.push(command)
 			elsif e["type"] == "COMMAND"
-				puts "RUNNING COMMAND #{gsubVars(e['path'])}" if NOOP
-				system(gsubVars(e['path'])) if !NOOP
+				puts gsubVars(e['path']) if NOOP
+				system gsubVars(e['path']) if !NOOP
 			end
 		end
 		@preCommands.concat(preparePrePostCommands(s['preRestore']))
@@ -193,15 +210,17 @@ def doBackupCommandsAndPrepareRestoreCommands(confHash = {})
 	end
 	puts "#{SECTIONS_SEPARATOR}"
 	puts "#{H1_PREFIX} BACKING UP FINISHED"
+	puts "#{H1_PREFIX} ACTUAL FILES COPYING WAS SKIPPED AS NOOP MODE ENABLED" if NOOP
 	puts "#{SECTIONS_SEPARATOR}"
 	content = ERB.new(RESTORE_SH_ERB)
 	if !NOOP	
 		puts "#{H1_PREFIX} Saving backup/restore script and config"
-		FileUtils.cp(CONFIG_PATH, BACKUP_PATH,verbose: (VERBOSE || NOOP))
+		system "echo #{CONFIG} > #{BACKUP_PATH}/#{TITLE}.json"
 		FileUtils.cp(__FILE__, BACKUP_PATH,verbose: (VERBOSE || NOOP))
 		File.open(File.join(BACKUP_PATH, 'restore.sh'), "w") do |file|
 			file.puts(content.result(binding))
 		end
+		system "echo '#{JSON.pretty_generate(CONFIG)}' > #{BACKUP_PATH}/#{TITLE}.json"
 		puts "#{H1_PREFIX} Archiving the backup"
 		puts "#{H2_PREFIX} #{TAR_COMMAND}"
 		system(TAR_COMMAND)
@@ -210,6 +229,7 @@ def doBackupCommandsAndPrepareRestoreCommands(confHash = {})
 		puts "\n#{SECTIONS_SEPARATOR}"
 		puts "#{H1_PREFIX} RESTORE SCRIPT BELOW"
 		puts "#{SECTIONS_SEPARATOR}\n\n"
+		system "echo '#{JSON.pretty_generate(CONFIG)}' > #{ROOT_PATH}/#{TITLE}.json"
 		puts content.result(binding)
 	end
 	puts FOOTER.join("\n")
