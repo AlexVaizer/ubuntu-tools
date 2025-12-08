@@ -23,7 +23,6 @@ opt_parser = OptionParser.new do |opts|
 	opts.on("--[no-]op", "Enable (--op) or disable (--no-op) actual files copying. (Default: --no-op)") do |o|
     	options.op = o
 	end
-
 	opts.on("-v", "--verbose", "Enable verbose output for files copying. (Default: false)") do
 		options.verbose = true
 	end
@@ -56,8 +55,6 @@ ARCHIVE_NAME = "#{BACKUP_PATH}.tar.gz".split("/").last
 UNTAR_COMMAND = "tar -xzvf /home/#{USERNAME}/#{ARCHIVE_NAME}"
 SECTIONS_SEPARATOR = "################################################"
 H1_PREFIX = "########"
-puts "#{H1_PREFIX} ENTER A PASSWORD FOR COCKPIT_USER:"
-
 RESTORE_SH_ERB = "#!/bin/bash
 set -x
 <%=SECTIONS_SEPARATOR%>
@@ -87,39 +84,39 @@ apt install -y <%=@aptPackages.join(' ')%>
 <%=H1_PREFIX%> Stage 4: Restarting and enabling services <%=@postCommands.join('')%>
 <%=SECTIONS_SEPARATOR%>"
 
-def gsubVars(string)
-	return string.gsub("$BACKUP_PATH", BACKUP_PATH)
-		.gsub("$COCKPIT_USERNAME", COCKPIT_USERNAME)
+HEADING = [
+	SECTIONS_SEPARATOR,
+	"#{H1_PREFIX} Backing up files",
+	"#{H1_PREFIX} Configuration: ",
+	"#{H1_PREFIX}     * Config File path: #{CONFIG_PATH}",
+	"#{H1_PREFIX}     * Operational mode: #{!NOOP}",
+	"#{H1_PREFIX}     * Verbose output: #{VERBOSE}",
+	"#{H1_PREFIX}     * Backup root folder: #{BACKUP_PATH}",
+	SECTIONS_SEPARATOR,
+	"#{H1_PREFIX} Backup Configuration: ",
+	"#{H1_PREFIX}     * Server Name: #{TITLE}",
+	"#{H1_PREFIX}     * Cockpit User: #{COCKPIT_USERNAME}",
+	"#{H1_PREFIX}     * Cockpit User Password: #{COCKPIT_USER_PASSWORD}",
+	SECTIONS_SEPARATOR
+]
+def gsubVarsGeneric(string)
+	return string.gsub("$COCKPIT_USERNAME", COCKPIT_USERNAME)
 		.gsub("$COCKPIT_USER_PASSWORD", COCKPIT_USER_PASSWORD)
 		.gsub("$START_TIME", START_TIME)
 		.gsub("$ROOT_PATH", ROOT_PATH)
 		.gsub("$USERNAME", USERNAME)
 		.gsub("$TITLE", TITLE)
+end
+def gsubVars(string)
+	return string.gsubVarsGeneric
+		.gsub("$BACKUP_PATH", BACKUP_PATH)
 end
 def gsubVarsRestore(string)
-	return string.gsub("$BACKUP_PATH", '.')
-		.gsub("$COCKPIT_USERNAME", COCKPIT_USERNAME)
-		.gsub("$COCKPIT_USER_PASSWORD", COCKPIT_USER_PASSWORD)
-		.gsub("$START_TIME", START_TIME)
-		.gsub("$ROOT_PATH", ROOT_PATH)
-		.gsub("$USERNAME", USERNAME)
-		.gsub("$TITLE", TITLE)
-		
+	return string.gsubVarsGeneric
+		.gsub("$BACKUP_PATH", '.')
 end
 def doBackupCommandsAndPrepareRestoreCommands(confHash = {})
-	puts SECTIONS_SEPARATOR
-	puts "#{H1_PREFIX} Backing up files"
-	puts "#{H1_PREFIX} Configuration: "
-	puts "#{H1_PREFIX}     * Config File path: #{CONFIG_PATH}"
-	puts "#{H1_PREFIX}     * Operational mode: #{!NOOP}"
-	puts "#{H1_PREFIX}     * Verbose output: #{VERBOSE}"
-	puts "#{H1_PREFIX}     * Backup root folder: #{BACKUP_PATH}"
-	puts SECTIONS_SEPARATOR
-	puts "#{H1_PREFIX} Backup Configuration: "
-	puts "#{H1_PREFIX}     * Server Name: #{TITLE}"
-	puts "#{H1_PREFIX}     * Cockpit User: #{COCKPIT_USERNAME}"
-	puts "#{H1_PREFIX}     * Cockpit User Password: #{COCKPIT_USER_PASSWORD}"
-	puts SECTIONS_SEPARATOR
+	puts HEADING.join("\n")
 	@preCommands = []
 	@restoreCommands = []
 	@postCommands = []
@@ -127,18 +124,18 @@ def doBackupCommandsAndPrepareRestoreCommands(confHash = {})
 	@aptPackages = []
 	confHash["softwares"].each do |s|
 		softwarePath = File.join(BACKUP_PATH, s['name'])
-		FileUtils.mkdir_p(softwarePath, verbose: VERBOSE, noop: NOOP)
+		FileUtils.mkdir_p(softwarePath, verbose: (VERBOSE || NOOP)), noop: NOOP)
 		s['backup'].each do |e|
 			if e['type'] == "FILE" then
 				categoryPath = File.join(softwarePath, e['name'])
-				FileUtils.mkdir_p(categoryPath, verbose: VERBOSE, noop: NOOP)
-				FileUtils.cp(gsubVars(e['path']),categoryPath , noop: NOOP ,verbose: VERBOSE)
+				FileUtils.mkdir_p(categoryPath, verbose: (VERBOSE || NOOP)), noop: NOOP)
+				FileUtils.cp(gsubVars(e['path']),categoryPath , noop: NOOP ,verbose: (VERBOSE || NOOP)))
 				command = "cp -v ./#{s['name']}/#{e['name']}/#{e['path'].split("/").last} #{e['path']}"
 				@restoreCommands.push("\n#### #{e['name']}\n")
 				@restoreCommands.push(command)
 			elsif e["type"] == "DIR"
 				pathUnlast = File.join(e['path'].split('/')[0..-1])
-				FileUtils.cp_r(gsubVars(e['path']), softwarePath, verbose: VERBOSE, noop: NOOP)
+				FileUtils.cp_r(gsubVars(e['path']), softwarePath, verbose: (VERBOSE || NOOP)), noop: NOOP)
 				command = "cp -vr ./#{s['name']}/#{e['path'].split("/").last}/* #{gsubVars(pathUnlast)}"
 				@restoreCommands.push("\n#### #{e['name']}\n")
 				@restoreCommands.push(command)
@@ -158,8 +155,8 @@ def doBackupCommandsAndPrepareRestoreCommands(confHash = {})
 	content = ERB.new(RESTORE_SH_ERB)
 	if !NOOP	
 		puts "#{H1_PREFIX} Saving backup/restore script and config"
-		FileUtils.cp(CONFIG_PATH, BACKUP_PATH,verbose: VERBOSE)
-		FileUtils.cp(__FILE__, BACKUP_PATH,verbose: VERBOSE)
+		FileUtils.cp(CONFIG_PATH, BACKUP_PATH,verbose: (VERBOSE || NOOP)))
+		FileUtils.cp(__FILE__, BACKUP_PATH,verbose: (VERBOSE || NOOP)))
 		File.open(File.join(BACKUP_PATH, 'restore.sh'), "w") do |file|
 			file.puts(content.result(binding))
 		end
