@@ -1,4 +1,4 @@
-		{
+{
 			"name": "mongodb",
 			"customAptRepoCommands": [
 				"curl -fsSL https://www.mongodb.org/static/pgp/server-8.0.asc | gpg -o /usr/share/keyrings/mongodb-server-8.0.gpg --dearmor",
@@ -32,38 +32,6 @@
 				{
 					"name": "Enable and restart mongoDb",
 					"command": "systemctl enable --now mongod.service; systemctl restart mongod.service"
-				}
-			]
-		},
-		{
-			"name": "wallet",
-			"packages": ["curl","ruby-full", "ruby-full", "ruby-bundler", "ruby-dev", "net-tools", "build-essential", "zlib1g-dev", "libreadline-dev", "libssl-dev", "libcurl4-openssl-dev"],
-			"backup": [
-				{
-					"name": "wallet-var",
-					"type": "DIR",
-					"path": "/var/wallet/"
-				},
-				{
-					"name": "wallet-service",
-					"type": "FILE",
-					"path": "/etc/systemd/system/wallet.service"
-				}
-			],
-			"preRestore": [
-				{
-					"name": "Create directory for wallet",
-					"command": "mkdir /var/wallet/"
-				}
-			],
-			"postRestore": [
-				{
-					"name": "Install Ruby Gems",
-					"command":"cd /var/wallet; /usr/bin/bundle install; cd $( dirname \"${BASH_SOURCE[0]}\" )"
-				},
-				{
-					"name": "Start and enable wallet service",
-					"command": "systemctl daemon-reload; systemctl enable --now wallet.service; systemctl restart wallet.service"
 				}
 			]
 		}

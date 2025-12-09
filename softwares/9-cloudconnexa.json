@@ -4,7 +4,7 @@
 			"name": "openvpn",
 			"customAptRepoCommands": [
 					"mkdir -p /etc/apt/keyrings;curl -fsSL https://aptPackages.openvpn.net/aptPackages-repo.gpg | tee /etc/apt/keyrings/openvpn.asc",
-					"echo \"deb [signed-by=/etc/apt/keyrings/openvpn.asc] https://aptPackages.openvpn.net/openvpn3/debian $(lsb_release -c -s) main\" | tee /etc/apt/sources.list.d/openvpn-aptPackages.list; apt update"
+					"echo \"deb [signed-by=/etc/apt/keyrings/openvpn.asc] https://aptPackages.openvpn.net/openvpn3/debian $(lsb_release -c -s) main\" | tee /etc/apt/sources.list.d/openvpn-aptPackages.list; apt update -y"
 			],
 			"aptPackages": ["python3-openvpn-connector-setup"],
 			"backup": [
