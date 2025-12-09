@@ -89,7 +89,14 @@ CONFIG = { #Resulting Config with all Constants
 	"cockpitUserPassword" => COCKPIT_USER_PASSWORD,
 	"softwares" => config["softwares"]
 }
-TAR_COMMAND = "tar -czf #{BACKUP_PATH}.tar.gz -C #{File.dirname(BACKUP_PATH)} #{File.basename(BACKUP_PATH)}"
+if VERBOSE then 
+	TAR_PREFIX = "tar -czvf"
+else
+	TAR_PREFIX = "tar -czf"
+end
+
+
+TAR_COMMAND = "#{TAR_PREFIX} #{BACKUP_PATH}.tar.gz -C #{File.dirname(BACKUP_PATH)} #{File.basename(BACKUP_PATH)}"
 ARCHIVE_NAME = "#{BACKUP_PATH}.tar.gz".split("/").last
 UNTAR_COMMAND = "tar -xzvf /home/#{USERNAME}/#{ARCHIVE_NAME}"
 
@@ -216,13 +223,16 @@ def doBackupCommandsAndPrepareRestoreCommands(confHash = {})
 	if !NOOP	
 		puts "#{H1_PREFIX} Saving backup/restore script and config"
 		puts "#{H2_PREFIX} Saving backup.rb"
-		FileUtils.cp(__FILE__, BACKUP_PATH,verbose: VERBOSE)
+		system("#{File.read(__FILE__)} > #{File.join(BACKUP_PATH,'backup.rb')}"
+		#FileUtils.cp(__FILE__, BACKUP_PATH,verbose: VERBOSE)
 		puts "#{H2_PREFIX} Saving restore.sh"
-		File.open(File.join(BACKUP_PATH, 'restore.sh'), "w") do |file|
-			file.puts(content.result(binding))
-		end
+		system("#{content.result(binding)} > #{File.join(BACKUP_PATH,'restore.sh')}"
+		# File.open(File.join(BACKUP_PATH, 'restore.sh'), "w") do |file|
+		# 	file.puts(content.result(binding))
+		# end
 		puts "#{H2_PREFIX} Saving #{TITLE}.json"
 		system "echo '#{JSON.pretty_generate(CONFIG)}' > #{BACKUP_PATH}/#{TITLE}.json"
+		
 		puts "#{H1_PREFIX} Archiving the backup"
 		puts "#{H2_PREFIX} #{TAR_COMMAND}"
 		system(TAR_COMMAND)
