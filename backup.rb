@@ -219,25 +219,27 @@ def doBackupCommandsAndPrepareRestoreCommands(confHash = {})
 	puts "#{H1_PREFIX} BACKING UP FINISHED"
 	puts "#{H1_PREFIX} ACTUAL FILES COPYING WAS SKIPPED AS NOOP MODE ENABLED" if NOOP
 	puts "#{SECTIONS_SEPARATOR}"
-	content = ERB.new(RESTORE_SH_ERB)
-	if !NOOP	
+	content = ERB.new(RESTORE_SH_ERB).result(binding)
+	if NOOP	
+		puts "\n#{SECTIONS_SEPARATOR}"
+		filepath = File.join(ROOT_PATH,"#{TITLE}.json")
+		puts "#{H1_PREFIX} Saving JSON Config into #{filepath}"
+		File.write(filepath, JSON.pretty_generate(CONFIG))
+		puts "#{H1_PREFIX} RESTORE SCRIPT BELOW"
+		puts "#{SECTIONS_SEPARATOR}\n\n"
+		puts content
+	else
 		puts "#{H1_PREFIX} Saving backup/restore script and config"
 		puts "#{H2_PREFIX} Saving backup.rb"
 		File.write(File.join(BACKUP_PATH,'backup.rb'), File.read(__FILE__))
 		puts "#{H2_PREFIX} Saving restore.sh"
-		File.write(File.join(BACKUP_PATH,'restore.sh'), content.result(binding))
+		File.write(File.join(BACKUP_PATH,'restore.sh'), content)
 		puts "#{H2_PREFIX} Saving #{TITLE}.json"
 		File.write(File.join(BACKUP_PATH,"#{TITLE}.json"), JSON.pretty_generate(CONFIG))
 		puts "#{H1_PREFIX} Archiving the backup"
 		puts "#{H2_PREFIX} #{TAR_COMMAND}"
 		system(TAR_COMMAND)
 		puts "#{SECTIONS_SEPARATOR}"
-	else
-		puts "\n#{SECTIONS_SEPARATOR}"
-		puts "#{H1_PREFIX} RESTORE SCRIPT BELOW"
-		puts "#{SECTIONS_SEPARATOR}\n\n"
-		system "echo '#{JSON.pretty_generate(CONFIG)}' > #{ROOT_PATH}/#{TITLE}.json"
-		puts content.result(binding)
 	end
 	puts FOOTER.join("\n")
 end
