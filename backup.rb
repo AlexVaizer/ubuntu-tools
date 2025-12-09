@@ -108,7 +108,7 @@ set -x
 <%=H1_PREFIX%> Be sure it is being run as ROOT
 <%=SECTIONS_SEPARATOR%>
 <%=H1_PREFIX%> Stage1: Installing custom repos and packages
-DEBIAN_FRONTEND=noninteractive apt update; apt upgrade
+DEBIAN_FRONTEND=noninteractive apt update -y; apt upgrade -y
 <%=@customAptRepoCommands.join('; ')%> 
 apt install -y <%=@aptPackages.join(' ')%> 
 <%=SECTIONS_SEPARATOR%>
