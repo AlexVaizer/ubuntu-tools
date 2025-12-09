@@ -215,11 +215,13 @@ def doBackupCommandsAndPrepareRestoreCommands(confHash = {})
 	content = ERB.new(RESTORE_SH_ERB)
 	if !NOOP	
 		puts "#{H1_PREFIX} Saving backup/restore script and config"
-		system "echo #{CONFIG} > #{BACKUP_PATH}/#{TITLE}.json"
-		FileUtils.cp(__FILE__, BACKUP_PATH,verbose: (VERBOSE || NOOP))
+		puts "#{H2_PREFIX} Saving backup.rb"
+		FileUtils.cp(__FILE__, BACKUP_PATH,verbose: VERBOSE)
+		puts "#{H2_PREFIX} Saving restore.sh"
 		File.open(File.join(BACKUP_PATH, 'restore.sh'), "w") do |file|
 			file.puts(content.result(binding))
 		end
+		puts "#{H2_PREFIX} Saving #{TITLE}.json"
 		system "echo '#{JSON.pretty_generate(CONFIG)}' > #{BACKUP_PATH}/#{TITLE}.json"
 		puts "#{H1_PREFIX} Archiving the backup"
 		puts "#{H2_PREFIX} #{TAR_COMMAND}"
