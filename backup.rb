@@ -7,7 +7,7 @@ require 'ostruct'
 
 # Structure to hold configuration settings
 options = OpenStruct.new(
-	conf:    './softwares/.template_config.json',
+	conf:    nil,
 	op:      false,  
 	verbose: false,
 	cockpitUserPassword: nil,
@@ -17,20 +17,24 @@ options = OpenStruct.new(
 	name: nil
 )
 opt_parser = OptionParser.new do |opts|
-	opts.banner = "Usage: sudo ruby backup.rb --conf PATH -v --cockpit-user-password PASSWORD"
-	opts.on("-c PATH", "--conf PATH", "Path to config file. (Default: ./softwares/.template_config.json)") do |path|
+	opts.banner = "
+	Usage: sudo ruby backup.rb --conf ./.template_config.json -v --cockpit-user-password PASSWORD --no-op
+           sudo ruby backup.rb --combine-megazord '3-nginx.json,4-letsencrypt.json,9-cloudconnexa.json,7-mongodb.json' --name 'vpsId.countryCode.example.com' --username ubuntu --cockpit-user-password NONE --cockpit-username NONE --op -v
+           sudo ruby backup.rb --help
+	"
+	opts.on("-c PATH", "--conf PATH", "Path to config file. (Default: ./softwares/1-network.json)") do |path|
     	options.conf = path
 	end
-	opts.on("-n SERVERNAME", "--name SERVERNAME", "Server Name, sent via this param has highest priority. Second Priority is CONFIG['title']") do |path|
+	opts.on("-n SERVERNAME", "--name SERVERNAME", "Server Name, sent via this param has highest priority. Second Priority is CONFIG['title']. 'vpsId.coutryCode.example.com' if empty in both places") do |path|
     	options.name = path
 	end
 	opts.on("-p STRING", "--cockpit-user-password STRING", "Password for a cockpit user, sent via this param has highest priority. Second Priority is CONFIG['cockpitUserPassword'], 'someRanDomPhraze834587' if empty in both places") do |p|
     	options.cockpitUserPassword = p
 	end
-	opts.on("-c STRING", "--cockpit-username STRING", "Username for a cockpit user, sent via this param has highest priority. Second Priority is CONFIG['cockpitUsername'], nil if empty in both places") do |p|
+	opts.on("-c STRING", "--cockpit-username STRING", "Username for a cockpit user, sent via this param has highest priority. Second Priority is CONFIG['cockpitUsername'], 'cockpit' if empty in both places") do |p|
     	options.cockpitUsername = p
 	end
-	opts.on("-u STRING", "--username STRING", "Username for a ssh user, sent via this param has highest priority. Second Priority is CONFIG['username'], nil if empty in both places") do |p|
+	opts.on("-u STRING", "--username STRING", "Username for a ssh user, sent via this param has highest priority. Second Priority is CONFIG['username'], 'ubuntu' if empty in both places") do |p|
     	options.username = p
 	end
 	opts.on("-o", "--[no-]op", "Enable (--op) or disable (--no-op) actual files copying. (Default: --no-op)") do |o|
@@ -39,8 +43,9 @@ opt_parser = OptionParser.new do |opts|
 	opts.on("-v", "--verbose", "Enable verbose output for files copying. (Default: false)") do
 		options.verbose = true
 	end
-	opts.on("--combine-megazord SOFTWARES", "Enable JSON combining from softwares list, use file names from ./softwares/ folder, f.e.: --combine-megazord '1-network.json,3-nginx.json'. (Default: false)") do |s|
+	opts.on("--combine-megazord SOFTWARES", "Enable JSON combining from softwares list, use comma separated file names from ./softwares/ folder, f.e.: --combine-megazord '1-network.json,3-nginx.json'. (Default: '1-network.json' if --conf not passed also)") do |s|
 		options.combineMegazord = s.split(',').sort if !s.nil?
+		options.combineMegazord = ['1-network.json'] if s.nil? & options.conf.nil?
 	end
 	opts.on("-h", "--help", "Prints this help message.") do
 		puts opts
@@ -67,7 +72,6 @@ if options.combineMegazord.empty?
 	config = JSON.parse(File.read(File.expand_path(options.conf)))
 	config_file_path = [File.expand_path(options.conf)]
 else
-	raise OptionParser::InvalidOption.new("You must set '--name SERVERNAME --username STRING --cockpit-user-password STRING --cockpit-username STRING' to use this mode") if options['name'].nil? || options['username'].nil? || options['cockpitUsername'].nil? || options['cockpitUserPassword'].nil?
 	megazord = []
 	options.combineMegazord.map { |e| megazord.push(content = JSON.parse(File.read(File.expand_path("./softwares/#{e}")))) } 
 	config = {'softwares' => megazord}
@@ -75,11 +79,11 @@ else
 end
 CONFIG_PATH = config_file_path
 # CONST assigned depending on priority Command-Line-Params -> JSON Config -> Local Defaults
-TITLE = options['name'] || config['title'] || ""
+TITLE = options['name'] || config['title'] || "vpsId.countryCode.example.com"
 BACKUP_PATH = File.join(ROOT_PATH,"#{TITLE}-#{START_TIME}")
-COCKPIT_USERNAME = options.cockpitUsername || config["cockpitUsername"] || ""
+COCKPIT_USERNAME = options.cockpitUsername || config["cockpitUsername"] || "cockpit"
 COCKPIT_USER_PASSWORD = options.cockpitUserPassword || config["cockpitUserPassword"] || "someRanDomPhraze834587"
-USERNAME = options.username || config["username"]
+USERNAME = options.username || config["username"] || "ubuntu"
 
 CONFIG = { #Resulting Config with all Constants
 	"title" => TITLE,
