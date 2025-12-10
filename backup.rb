@@ -45,7 +45,6 @@ opt_parser = OptionParser.new do |opts|
 	end
 	opts.on("--combine-megazord SOFTWARES", "Enable JSON combining from softwares list, use comma separated file names from ./softwares/ folder, f.e.: --combine-megazord '1-network.json,3-nginx.json'. (Default: '1-network.json' if --conf not passed also)") do |s|
 		options.combineMegazord = s.split(',').sort if !s.nil?
-		options.combineMegazord = ['1-network.json'] if s.nil? & options.conf.nil?
 	end
 	opts.on("-h", "--help", "Prints this help message.") do
 		puts opts
@@ -59,6 +58,7 @@ rescue OptionParser::InvalidOption => e
 	puts opt_parser
 	exit(1)
 end
+options.combineMegazord = ['1-network.json'] if options.combineMegazord.empty? & options.conf.nil?
 # Layout related constants. Keep first symbol '#' to be sure restore.sh does not get some text uncommented
 H2_PREFIX = "###"
 H1_PREFIX = "#{H2_PREFIX} #{'--'*3}"
