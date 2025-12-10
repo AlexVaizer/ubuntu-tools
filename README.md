@@ -3,8 +3,12 @@
  * Generates Bash script to restore them back
 
 ```
-Usage: sudo ruby backup.rb --conf PATH -v --cockpit-user-password PASSWORD
-        --conf PATH                  Path to config file. (Default: ./softwares/.template_config.json)
+Usage: sudo ruby backup.rb --conf ./.template_config.json -v --cockpit-user-password PASSWORD --no-op
+       sudo ruby backup.rb --combine-megazord '3-nginx.json,4-letsencrypt.json,9-cloudconnexa.json,7-mongodb.json' --name 'vpsId.countryCode.example.com' --username ubuntu --cockpit-user-password NONE --cockpit-username NONE --op -v
+       sudo ruby backup.rb --help
+
+Parameters:
+        --conf PATH                  Path to config file.
     -n, --name SERVERNAME            Server Name, sent via this param has highest priority. Second Priority is CONFIG['title']
     -p STRING,                       Password for a cockpit user, sent via this param has highest priority. Second Priority is CONFIG['cockpitUserPassword'], 'someRanDomPhraze834587' if empty in both places
         --cockpit-user-password
