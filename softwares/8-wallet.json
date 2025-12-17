@@ -1,6 +1,6 @@
 {
 			"name": "wallet",
-			"packages": ["curl","ruby-full", "ruby-full", "ruby-bundler", "ruby-dev", "net-tools", "build-essential", "zlib1g-dev", "libreadline-dev", "libssl-dev", "libcurl4-openssl-dev"],
+			"aptPackages": ["curl","ruby-full", "ruby-full", "ruby-bundler", "ruby-dev", "net-tools", "build-essential", "zlib1g-dev", "libreadline-dev", "libssl-dev", "libcurl4-openssl-dev"],
 			"backup": [
 				{
 					"name": "wallet-var",
