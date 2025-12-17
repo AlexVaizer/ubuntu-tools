@@ -1,0 +1,42 @@
+		{
+			"name": "postfix",
+			"aptPackages": ["postfix" "sasl2-bin" "libsasl2-modules" "postfix-pcre", "opendkim", "opendkim-tools"],
+			"backup": [
+				{
+					"name": "etc-postfix",
+					"type": "DIR",
+					"path": "/etc/postfix/"
+				},
+				{
+					"name": "master-cf",
+					"type": "FILE",
+					"path": "/etc/opendkim/"
+				},
+				{
+					"name": "sasl-db",
+					"type": "FILE",
+					"path": "/etc/sasldb2"
+				}
+
+			],
+			"preRestore": [
+				{
+					"name": "Temporary stop service before copying configs",
+					"command": "systemctl stop postfix"
+				}
+			],
+			"postRestore": [
+				{
+					"name": "Restore Permissions",
+					"command": "chown postfix:postfix /etc/sasldb2; chmod 660 /etc/sasldb2; sudo gpasswd -a postfix opendkim; sudo chown -R opendkim:opendkim /etc/opendkim"
+				},
+				{
+					"name": "Restore sasl",
+					"command": "sudo mkdir -p /var/spool/postfix/etc; sudo cp /etc/sasldb2 /var/spool/postfix/etc/sasldb2; sudo chown postfix:postfix /var/spool/postfix/etc/sasldb2; sudo chmod 660 /var/spool/postfix/etc/sasldb2"
+				},
+				{
+					"name": "Restore Service",
+					"command": "systemctl daemon-reload; systemctl start postfix opendkim; systemctl enable --now postfix opendkim"
+				}
+			]
+		}

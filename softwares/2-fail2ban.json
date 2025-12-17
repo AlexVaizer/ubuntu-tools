@@ -8,11 +8,16 @@
 					"path": "/etc/fail2ban/"
 				}
 			],
-			"preRestore": [],
+			"preRestore": [
+				{
+					"name": "Temporary stop service before copying configs",
+					"command": "systemctl stop fail2ban"
+				}
+			],
 			"postRestore": [
 				{
-					"name":"Enable and start fail2ban",
-					"command": "systemctl enable --now fail2ban.service; systemctl restart fail2ban.service"
+					"name":"Start and enable fail2ban",
+					"command": "systemctl daemon-reload; systemctl start fail2ban; systemctl enable --now fail2ban"
 				}
 			]
 

@@ -28,7 +28,7 @@
 				// Commented because can break another connector
 				//{ 
 				//	"name": "Start service",
-				//	"command": "systemctl enable openvpn3-session@CloudConnexa.service"
+				//	"command": "systemctl enable --now openvpn3-session@CloudConnexa.service"
 				//}
 			]
 		}

@@ -21,7 +21,7 @@
 			"preRestore": [
 				{
 					"name": "Start mongod service temporarily with default config to upload backup",
-					"command": "systemctl start mongod.service"
+					"command": "systemctl start mongod"
 				}
 			],
 			"postRestore": [
@@ -31,7 +31,7 @@
 				},
 				{
 					"name": "Enable and restart mongoDb",
-					"command": "systemctl enable --now mongod.service; systemctl restart mongod.service"
+					"command": "systemctl daemon-reload; systemctl start mongod; systemctl enable --now mongod"
 				}
 			]
 		}

@@ -8,15 +8,20 @@
 					"path": "/etc/nginx/"
 				}
 			],
-			"preRestore": [],
+			"preRestore": [
+				{
+					"name": "Temporary stop service before copying configs",
+					"command": "systemctl stop nginx"
+				}
+			],
 			"postRestore": [
 				{
 					"name": "Remove default site",
 					"command":"rm -f /etc/nginx/sites-enabled/default; rm -f /etc/nginx/sites-available/default"
 				},
 				{
-					"name": "Enable nginx",
-					"command":"systemctl enable --now nginx.service; systemctl restart nginx.service"
+					"name": "Start and Enable nginx",
+					"command":"systemctl daemon-reload; systemctl start nginx; systemctl enable --now nginx"
 				}
 			]
 		}

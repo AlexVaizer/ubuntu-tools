@@ -17,12 +17,16 @@
 				{
 					"name": "add cockpit user",
 					"command": "useradd -m -p $(openssl passwd -6 $COCKPIT_USER_PASSWORD) -s /bin/bash $COCKPIT_USERNAME; sudo usermod -aG sudo $COCKPIT_USERNAME; mkdir -p /home/$COCKPIT_USERNAME/.ssh; mkdir -p /etc/systemd/system/cockpit.socket.d"
+				},
+				{
+					"name": "Temporary stop service before copying configs",
+					"command": "systemctl stop cockpit"
 				}
 			],
 			"postRestore": [
 				{
 					"name":"Restart cockpit",
-					"command": "systemctl enable --now cockpit.socket; systemctl restart cockpit.socket"
+					"command": "systemctl daemon-reload; systemctl start cockpit.socket; systemctl enable --now cockpit.socket"
 				}
 			]
 		}
