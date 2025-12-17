@@ -32,7 +32,11 @@
 				},
 				{
 					"name": "Restore sasl",
-					"command": "sudo mkdir -p /var/spool/postfix/etc; sudo cp /etc/sasldb2 /var/spool/postfix/etc/sasldb2; sudo chown postfix:postfix /var/spool/postfix/etc/sasldb2; sudo chmod 660 /var/spool/postfix/etc/sasldb2"
+					"command": "mkdir -p /var/spool/postfix/etc; cp /etc/sasldb2 /var/spool/postfix/etc/sasldb2; chown postfix:postfix /var/spool/postfix/etc/sasldb2; chmod 660 /var/spool/postfix/etc/sasldb2"
+				},
+				{
+					"name": "Regenerate databases",
+					"command": "postmap /etc/postfix/virtual; sudo newaliases"
 				},
 				{
 					"name": "Restore Service",
