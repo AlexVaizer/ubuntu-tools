@@ -7,19 +7,19 @@ require 'ostruct'
 
 # Structure to hold configuration settings
 options = OpenStruct.new(
-	conf:    nil,
-	op:      false,  
+	conf: nil,
+	op: false,
 	verbose: false,
-	cockpitUserPassword: nil,
 	cockpitUsername: nil,
 	username: nil,
 	combineMegazord: [],
 	name: nil
 )
+
 opt_parser = OptionParser.new do |opts|
 	opts.banner = "
-	Usage: sudo ruby backup.rb --conf ./.template_config.json -v --cockpit-user-password PASSWORD --no-op
-           sudo ruby backup.rb --combine-megazord '3-nginx.json,4-letsencrypt.json,9-cloudconnexa.json,7-mongodb.json' --name 'vpsId.countryCode.example.com' --username ubuntu --cockpit-user-password NONE --cockpit-username NONE --op -v
+	Usage: sudo COCKPIT_PASSWORD='somepassword' ruby backup.rb --conf ./.template_config.json -v --no-op
+           sudo COCKPIT_PASSWORD='somepassword' ruby backup.rb --combine-megazord '3-nginx.json,4-letsencrypt.json,9-cloudconnexa.json,7-mongodb.json' --name 'vpsId.countryCode.example.com' --username ubuntu --cockpit-username NONE --op -v
            sudo ruby backup.rb --help
 	"
 	opts.on("-c PATH", "--conf PATH", "Path to config file. (Default: ./softwares/1-network.json)") do |path|
@@ -27,9 +27,6 @@ opt_parser = OptionParser.new do |opts|
 	end
 	opts.on("-n SERVERNAME", "--name SERVERNAME", "Server Name, sent via this param has highest priority. Second Priority is CONFIG['title']. 'vpsId.coutryCode.example.com' if empty in both places") do |path|
     	options.name = path
-	end
-	opts.on("-p STRING", "--cockpit-user-password STRING", "Password for a cockpit user, sent via this param has highest priority. Second Priority is CONFIG['cockpitUserPassword'], 'someRanDomPhraze834587' if empty in both places") do |p|
-    	options.cockpitUserPassword = p
 	end
 	opts.on("-c STRING", "--cockpit-username STRING", "Username for a cockpit user, sent via this param has highest priority. Second Priority is CONFIG['cockpitUsername'], 'cockpit' if empty in both places") do |p|
     	options.cockpitUsername = p
@@ -81,8 +78,8 @@ CONFIG_PATH = config_file_path
 # CONST assigned depending on priority Command-Line-Params -> JSON Config -> Local Defaults
 TITLE = options['name'] || config['title'] || "vpsId.countryCode.example.com"
 BACKUP_PATH = File.join(ROOT_PATH,"#{TITLE}-#{START_TIME}")
-COCKPIT_USERNAME = options.cockpitUsername || config["cockpitUsername"] || "cockpit"
-COCKPIT_USER_PASSWORD = options.cockpitUserPassword || config["cockpitUserPassword"] || "someRanDomPhraze834587"
+COCKPIT_USERNAME = options.cockpitUsername || config["cockpitUsername"] || abort("Error: No Cockpit Username provided in config or CLI params!")
+COCKPIT_USER_PASSWORD = ENV['COCKPIT_PASSWORD'] || config["cockpitUserPassword"] || abort("Error: No Cockpit Password provided in config or COCKPIT_PASSWORD env var")
 USERNAME = options.username || config["username"] || "ubuntu"
 
 CONFIG = { #Resulting Config with all Constants
@@ -93,7 +90,7 @@ CONFIG = { #Resulting Config with all Constants
 	"cockpitUserPassword" => COCKPIT_USER_PASSWORD,
 	"softwares" => config["softwares"]
 }
-if VERBOSE then 
+if VERBOSE then
 	TAR_PREFIX = "tar -czvf"
 else
 	TAR_PREFIX = "tar -czf"
@@ -211,7 +208,12 @@ def doBackupCommandsAndPrepareRestoreCommands(confHash = {})
 				@restoreCommands.push(command)
 			elsif e["type"] == "COMMAND"
 				puts gsubVars(e['path']) if NOOP
-				system gsubVars(e['path']) if !NOOP
+				if !NOOP
+					command = gsubVars(e['path'])
+  					if !system(command)
+    					abort("\nError: Command failed to execute!\nCommand: #{command}\nExit Code: #{$?.exitstatus}")
+  					end
+				end
 			end
 		end
 		@preCommands.concat(preparePrePostCommands(s['preRestore']))
@@ -242,7 +244,9 @@ def doBackupCommandsAndPrepareRestoreCommands(confHash = {})
 		File.write(File.join(BACKUP_PATH,"#{TITLE}.json"), JSON.pretty_generate(CONFIG))
 		puts "#{H1_PREFIX} Archiving the backup"
 		puts "#{H2_PREFIX} #{TAR_COMMAND}"
-		system(TAR_COMMAND)
+		if !system(TAR_COMMAND)
+			abort("Error: Failed to create archive. Command exited with #{$?}")
+		end
 		puts "#{SECTIONS_SEPARATOR}"
 	end
 	puts FOOTER.join("\n")
