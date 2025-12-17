@@ -24,5 +24,10 @@
 					"command": "snap install core; snap refresh core; snap install --classic certbot; snap set certbot trust-plugin-with-root=ok; snap install certbot-dns-route53; snap set certbot trust-plugin-with-root=ok; snap install certbot-dns-cloudflare; mkdir -p /root/.aws/; mkdir /etc/letsencrypt;"
 				}
 			],
-			"postRestore": []
+			"postRestore": [
+				{
+            		"name": "Secure Credentials",
+            		"command": "chmod 600 /root/cf-creds.txt; chmod 600 /root/.aws/config"
+        		}
+			]
 		}
