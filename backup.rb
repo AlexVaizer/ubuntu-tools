@@ -210,6 +210,7 @@ def doBackupCommandsAndPrepareRestoreCommands(confHash = {})
 				puts gsubVars(e['path']) if NOOP
 				if !NOOP
 					command = gsubVars(e['path'])
+					puts "\n#{H1_PREFIX} copying #{e['name']}"
   					if !system(command)
     					abort("\nError: Command failed to execute!\nCommand: #{command}\nExit Code: #{$?.exitstatus}")
   					end
