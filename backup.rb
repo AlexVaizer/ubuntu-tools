@@ -193,6 +193,7 @@ def doBackupCommandsAndPrepareRestoreCommands(confHash = {})
 		softwarePath = File.join(BACKUP_PATH, s['name'])
 		FileUtils.mkdir_p(softwarePath, verbose: (VERBOSE || NOOP), noop: NOOP)
 		s['backup'].each do |e|
+			puts "\n#{H1_PREFIX} Backing up #{e['name']}"
 			if e['type'] == "FILE" then
 				categoryPath = File.join(softwarePath, e['name'])
 				FileUtils.mkdir_p(categoryPath, verbose: (VERBOSE || NOOP), noop: NOOP)
@@ -210,7 +211,6 @@ def doBackupCommandsAndPrepareRestoreCommands(confHash = {})
 				puts gsubVars(e['path']) if NOOP
 				if !NOOP
 					command = gsubVars(e['path'])
-					puts "\n#{H1_PREFIX} copying #{e['name']}"
   					if !system(command)
     					abort("\nError: Command failed to execute!\nCommand: #{command}\nExit Code: #{$?.exitstatus}")
   					end
